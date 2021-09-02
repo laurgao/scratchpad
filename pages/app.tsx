@@ -4,7 +4,9 @@ import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { ContextMenu, ContextMenuTrigger, MenuItem } from "react-contextmenu";
 import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
+import { FiTrash } from "react-icons/fi";
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
@@ -124,6 +126,29 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             createNewFile()
         }
     }
+
+    function deleteFile(fileId: string) {
+        setIsLoading(true);
+
+        axios.delete("/api/file", {
+            data: {
+                id: fileId,
+            },
+        }).then(res => {
+            if (res.data.error) {
+                setError(res.data.error);
+                setIsLoading(false);
+            } else {
+                console.log("File deleted! ✨", res.data);
+                if (selectedFileId === fileId) setSelectedFileId("")
+                setIter(iter + 1);
+            }
+        }).catch(e => {
+            setIsLoading(false);
+            setError("An unknown error occurred.");
+            console.log(e);
+        });
+    }
     
     return (
         <Container className="flex gap-12" width="7xl">
@@ -144,6 +169,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 </>}
                 <Button onClick={() => setIsNewFolder(true)} className="text-gray-400 mb-4 text-xs flex align-center"><FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"} (n)</p></Button>
                 {folders && folders.map((folder, index) => 
+                    <>
                     <Accordion 
                         key={folder._id} 
                         className="text-base text-gray-400 mb-2" 
@@ -157,13 +183,26 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                         setOpenState={(event) => handleTextOnClick(event, index, textIsOpen == index)}
                         openState={textIsOpen == index}
                     >
+                        <>
                         <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
-                            <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
-                                setSelectedFileId(file._id)
-                                setBody(file.body)
-                            }}>{file.name}</p>
-                        )}</div>
-                    </Accordion>    
+                            <>
+                            <ContextMenuTrigger id={file._id}>
+                                <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
+                                    setSelectedFileId(file._id)
+                                    setBody(file.body)
+                                }}>{file.name}</p>
+                            </ContextMenuTrigger>                                           
+                
+                            <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg">
+                                <MenuItem onClick={() => deleteFile(file._id)} className="flex hover:bg-gray-50 p-4 ">
+                                    <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
+                                </MenuItem>
+                            </ContextMenu>
+                            </>
+                        )}</div>        
+                        </>
+                    </Accordion>
+                    </>
                 )}
             </div>
             <div className="prose content flex-grow">
