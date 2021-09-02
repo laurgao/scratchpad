@@ -1,7 +1,7 @@
-import {useSession} from "next-auth/client";
+import { useSession } from "next-auth/client";
+import { useRouter } from "next/router";
 import Button from "./Button";
 import Container from "./Container";
-import {useRouter} from "next/router";
 
 export default function Navbar() {
     const [session, loading] = useSession();
@@ -10,7 +10,7 @@ export default function Navbar() {
     return (
         <div className="w-full sticky top-0">
             <Container className="flex items-center my-4" width="full">
-                <p>YourApp</p>
+                <p>Scratchpad</p>
                 <div className="ml-auto">
                     {(session && router.route !== "/") ? (
                         <img

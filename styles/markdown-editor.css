@@ -1,0 +1,86 @@
+.EasyMDEContainer .editor-toolbar {
+    font-size: 1rem;
+    border: 0;
+    padding-left: 0;
+    padding-right: 0;
+    position: sticky;
+    top: 4rem;
+    z-index: 5;
+    background-color: white;
+}
+
+.EasyMDEContainer .editor-toolbar button {
+    margin-right: 7px;
+    margin-left: 7px;
+}
+
+div.CodeMirror-sizer {
+    border-right-width: 0 !important;
+}
+
+
+/* .CodeMirror-code,
+.CodeMirror-sizer,
+.CodeMirror-lines,
+.CodeMirror-scroll,
+.CodeMirror,
+.CodeMirror-wrap,
+.EasyMDEContainer,
+.helloworld-wrapper {
+    word-break: break-all;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: hidden;
+} */
+
+pre {
+    overflow-x: auto;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+}
+
+
+/* .EasyMDEContainer div.CodeMirror {
+    border: 0;
+    padding-top: 2rem;
+    padding-left: 0;
+    padding-right: 0;
+} */
+
+div.CodeMirror-measure,
+div.CodeMirror-cursors {
+    display: none;
+}
+
+div.editor-statusbar span {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.CodeMirror-placeholder {
+    opacity: 0.35;
+}
+
+.CodeMirror-line::selection,
+.CodeMirror-line>span::selection,
+.CodeMirror-line>span>span::selection {
+    background-color: rgba(229, 231, 235, 0.3) !important;
+    /* Tailwind gray 100 */
+}
+
+.CodeMirror-line::-moz-selection,
+.CodeMirror-line>span::-moz-selection,
+.CodeMirror-line>span>span::-moz-selection {
+    background-color: rgba(229, 231, 235, 0.3) !important;
+}
+
+.CodeMirror-selected {
+    background-color: rgba(229, 231, 235, 0.3) !important;
+}
+
+.CodeMirror-focused .CodeMirror-selected {
+    background-color: rgba(229, 231, 235, 0.3) !important;
+}

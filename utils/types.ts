@@ -5,6 +5,21 @@ export interface UserObj {
     image: string,
 }
 
+export interface FileObj {
+    body?: string; 
+    name: string; 
+    folder: string; 
+}
+
+export interface FolderObj {
+    user: string; 
+    name: string; 
+}
+
+export interface FolderObjGraph extends FolderObj {
+    fileArr: DatedObj<FileObj>[],
+}
+
 export interface SessionObj {
     user: {
         name: string,
