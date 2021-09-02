@@ -1,19 +1,5 @@
-# Next MongoDB Nextauth Example
+# Scratchpad
 
-Builds on [next-tailwind-typescript-example](https://github.com/wwsalmon/next-tailwind-typescript-example)
+Tool to serve my project-planning/daily-random-notes needs. [Build tools around workflows, not workflows around tools](https://thesephist.com/posts/tools/).
 
-This starter takes care of boilerplate for:
-- Typescript and TailwindCSS
-- _document.tsx
-- Mongoose/MongoDB
-- [NextAuth](https://next-auth.js.org/) with MongoDB integration
-- Basic auth flow screens
-- SEO component
-- Base button and modal components
-
-To use, run `npx create-next-app -e https://github.com/wwsalmon/next-mongodb-nextauth-example`, then create a `.env`
-file with the following variables:
-- MONGODB_URL
-- GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
-- NEXTAUTH_URL
+Built off of [next-mongodb-nextauth-example](https://github.com/wwsalmon/next-mongodb-nextauth-example).
