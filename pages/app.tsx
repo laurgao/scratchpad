@@ -14,6 +14,7 @@ import Button from "../components/Button";
 import Container from "../components/Container";
 import H2 from "../components/H2";
 import Input from "../components/Input";
+import Modal from "../components/Modal";
 import SEO from "../components/SEO";
 import { UserModel } from "../models/User";
 import cleanForJSON from "../utils/cleanForJSON";
@@ -35,7 +36,8 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
     const [textIsOpen, setTextIsOpen] = useState<number>(0);
     const [selectedFileId, setSelectedFileId] = useState<string>("");
-
+    const [toDeleteItem, setToDeleteItem] = useState<any>(null);
+    
     useEffect(() => {if (selectedFileId) saveFile()}, [body])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
 
@@ -127,10 +129,10 @@ export default function App(props: { user: DatedObj<UserObj> }) {
         }
     }
 
-    function deleteFile(fileId: string) {
+    function deleteFile(fileId: string, type: "file" | "folder" = "file") {
         setIsLoading(true);
 
-        axios.delete("/api/file", {
+        axios.delete(`/api/${type}`, {
             data: {
                 id: fileId,
             },
@@ -139,8 +141,9 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setError(res.data.error);
                 setIsLoading(false);
             } else {
-                console.log("File deleted! ✨", res.data);
-                if (selectedFileId === fileId) setSelectedFileId("")
+                console.log(`${type} deleted! ✨`, res.data);
+                setToDeleteItem(null);
+                if (type === "file" && selectedFileId === fileId) setSelectedFileId("");
                 setIter(iter + 1);
             }
         }).catch(e => {
@@ -153,6 +156,18 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     return (
         <Container className="flex gap-12" width="7xl">
             <SEO />
+            {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
+                <div className="text-center">
+                    <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
+                    <div className="flex items-center gap-2 mt-2 justify-center">
+                        <Button 
+                            onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
+                            // isLoading={isLoading}
+                        >Delete</Button>
+                        <Button onClick={() => setToDeleteItem(null)}>Cancel</Button>
+                    </div>
+                </div>
+            </Modal>}
             <div style={{maxWidth: 150}}>
                 {isNewFolder && <>
                     <form>
@@ -170,6 +185,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 <Button onClick={() => setIsNewFolder(true)} className="text-gray-400 mb-4 text-xs flex align-center"><FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"} (n)</p></Button>
                 {folders && folders.map((folder, index) => 
                     <>
+                    <ContextMenuTrigger id={folder._id}>
                     <Accordion 
                         key={folder._id} 
                         className="text-base text-gray-400 mb-2" 
@@ -193,15 +209,21 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                                 }}>{file.name}</p>
                             </ContextMenuTrigger>                                           
                 
-                            <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg">
-                                <MenuItem onClick={() => deleteFile(file._id)} className="flex hover:bg-gray-50 p-4 ">
+                            <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
+                                <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
                                     <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
                                 </MenuItem>
                             </ContextMenu>
                             </>
-                        )}</div>        
+                        )}</div>
                         </>
                     </Accordion>
+                    </ContextMenuTrigger>
+                    <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10">
+                        <MenuItem onClick={() => {setToDeleteItem(folder)}} className="flex hover:bg-gray-50 p-4">
+                            <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
+                        </MenuItem>
+                    </ContextMenu>
                     </>
                 )}
             </div>

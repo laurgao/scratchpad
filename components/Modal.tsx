@@ -1,19 +1,20 @@
-import {Dispatch, ReactNode, SetStateAction} from 'react';
+import { ReactNode } from 'react';
 import ReactModal from "react-modal";
 
-export default function Modal({isOpen, setIsOpen, children}: {
+export default function Modal({isOpen, onRequestClose, children, small = false}: {
     isOpen: boolean,
-    setIsOpen: Dispatch<SetStateAction<boolean>>,
+    onRequestClose: any,
     children: ReactNode,
+    small?: boolean,
 }) {
     const modalClasses = "top-24 left-1/2 fixed bg-white p-4 rounded-md shadow-xl mx-4";
 
     return (
         <ReactModal
             isOpen={isOpen}
-            onRequestClose={() => setIsOpen(false)}
+            onRequestClose={onRequestClose}
             className={modalClasses}
-            style={{content: {transform: "translateX(calc(-50% - 16px))", maxWidth: "calc(100% - 32px)", width: 700}, overlay: {zIndex: 50}}}
+            style={{content: {transform: "translateX(calc(-50% - 16px))", maxWidth: "calc(100% - 32px)", width: small ? 350 : 700}, overlay: {zIndex: 50}}}
         >
             {children}
         </ReactModal>

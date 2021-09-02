@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
+import { FileModel } from "../../models/File";
 import { FolderModel } from "../../models/Folder";
 import { UserModel } from "../../models/User";
 import dbConnect from "../../utils/dbConnect";
@@ -81,11 +82,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await dbConnect();
                                
                 const thisObject = await FolderModel.findById(req.body.id);
+                const thisUser = await UserModel.findOne({email: session.user.email})
+                // session.userId is null
                 
                 if (!thisObject) return res.status(404);
-                if (thisObject.userId.toString() !== session.userId) return res.status(403);
+                if (thisObject.user.toString() !== thisUser._id.toString()) return res.status(403);
                 
                 await FolderModel.deleteOne({_id: req.body.id});
+                await FileModel.deleteMany({folder: req.body.id});
                 
                 return res.status(200).json({message: "Object deleted"});
             } catch (e) {
