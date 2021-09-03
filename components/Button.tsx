@@ -20,7 +20,7 @@ interface ButtonPropsButton extends ButtonPropsBase {
 type ButtonProps = ButtonPropsLink | ButtonPropsButton;
 
 export default function Button({children, href, onClick, className, disabled}: ButtonProps) {
-    const classNames = "p-2" + className;
+    const classNames = "p-2 " + className;
 
     return href ? (
         <Link href={href}>

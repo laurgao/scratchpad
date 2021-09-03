@@ -204,7 +204,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                     </div>
                 </div>
             </Modal>}
-            <div style={{maxWidth: 150}}>
+            <div style={{width: 150}}>
                 {isNewFolder && <>
                     <Input 
                         value={fileName}
@@ -228,7 +228,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                             </Button>
                         </Trigger>
                         <Hover type="hover">
-                            <div className="transition bg-white border border-gray-400 p-1">ctrl/command + /</div>
+                            <div className="transition bg-white border border-gray-400 p-1">(win) ctrl + /<br/>(mac) cmd + /</div>
                         </Hover>
                   </ReactHover>
                     }
