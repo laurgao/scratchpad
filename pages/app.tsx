@@ -205,7 +205,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                         value={fileName}
                         setValue={setFileName}
                         type="text"
-                        placeholder={dateFileName}
+                        placeholder={`New ${!openFolderId ? "folder" : "file"}`}
                         my={0}
                         id="new-file"
                     />
@@ -219,6 +219,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                       }}>
                         <Trigger type="trigger">
                             <Button onClick={() => {
+                                if (!openFolderId) setFileName("");
                                 setIsNewFolder(true);
                                 waitForEl("new-file");
                             }} className="flex items-center w-full">
