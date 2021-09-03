@@ -14,7 +14,6 @@
         "@types/react": "^17.0.0",
         "axios": "^0.21.1",
         "date-fns": "^2.22.1",
-        "keymaster": "^1.6.2",
         "mongoose": "^5.12.13",
         "mousetrap": "^1.6.5",
         "next": "^11.1.0",

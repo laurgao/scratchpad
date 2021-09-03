@@ -4,12 +4,12 @@ import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { ContextMenu, ContextMenuTrigger, MenuItem } from "react-contextmenu";
 import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
+import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
@@ -28,20 +28,24 @@ import { DatedObj, FolderObjGraph, UserObj } from "../utils/types";
 
 export default function App(props: { user: DatedObj<UserObj> }) {
     const dateFileName = format(new Date(), "yyyy-MM-dd")
-    const router = useRouter();
     const [error, setError] = useState<string>(null);
     const [iter, setIter] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [fileName, setFileName] = useState<string>(dateFileName);
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
-    const [body, setBody] = useState<string>("body text");
+    const [body, setBody] = useState<string>("");
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
-    const [textIsOpen, setTextIsOpen] = useState<number>(-1);
+    const [openFolderId, setOpenFolderId] = useState<string>("");
     const [selectedFileId, setSelectedFileId] = useState<string>("");
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
+    const [isSaved, setIsSaved] = useState<boolean>(true);
     
-    useEffect(() => {if (selectedFileId) saveFile()}, [body])
+    useEffect(() => {if (selectedFileId) {
+        setIsSaved(false);
+        saveFile();
+    }}, [body])
+    useEffect(() => {setIsSaved(true);}, [selectedFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
 
     useKey("Enter", (e) => {
@@ -56,18 +60,6 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             setIsNewFolder(false);
         }
     })
-    // ['command+f', 'ctrl+f']
-    // Mousetrap.bind('ctrl+f', function(e) { 
-    //     if (!isNewFolder) {
-    //         e.preventDefault();
-    //         setIsNewFolder(true);
-    //         waitForEl("new-file");
-    //     } 
-    //     // console.log("key is pressed", e)
-    //     // console logging e gives some interesting data
-    // });
-    // / returning false stops the event and prevents default browser events
-    // key('ctrl+r', function(){ alert('stopped reload!'); return false });
     useEffect(() => {
         function onNewSnippetShortcut(e) {
             e.preventDefault();
@@ -85,11 +77,11 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     });
 
 
-    const handleTextOnClick = (event: any, index: number, currentIsOpen: boolean) => {
+    const handleTextOnClick = (event: any, folderId: string, currentIsOpen: boolean) => {
         if (currentIsOpen) {
-            setTextIsOpen(-1);
+            setOpenFolderId("");
         } else {
-            setTextIsOpen(index);
+            setOpenFolderId(folderId);
         }
     }
     function createNewFolder() {
@@ -118,7 +110,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
 
         axios.post("/api/file", {
             name: fileName,
-            folder: foldersData.data[textIsOpen]._id,
+            folder: openFolderId,
         }).then(res => {
             if (res.data.error) {
                 setError(res.data.error);
@@ -127,7 +119,8 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 console.log(res.data.message);
                 setIter(iter + 1);
                 setFileName(dateFileName);
-                setSelectedFileId(res.data.id)
+                setSelectedFileId(res.data.id);
+                setBody("");
             }
         }).catch(e => {
             setIsLoading(false);
@@ -148,6 +141,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setIsLoading(false);
             } else {
                 console.log(res.data.message);
+                setIsSaved(true);
                 setIter(iter + 1);
             }
         }).catch(e => {
@@ -158,7 +152,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     }
 
     function onSubmit() {
-        if (textIsOpen === -1) {
+        if (!openFolderId) {
             createNewFolder()
         } else {
             createNewFile()
@@ -228,7 +222,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                                 setIsNewFolder(true);
                                 waitForEl("new-file");
                             }} className="flex items-center w-full">
-                                <FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"}</p>
+                                <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
                             </Button>
                         </Trigger>
                         <Hover type="hover">
@@ -237,27 +231,27 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                   </ReactHover>
                     }
                 </div>
-                {folders && folders.map((folder, index) => 
+                {folders && folders.map(folder => 
                     <div key={folder._id} >
                         <ContextMenuTrigger id={folder._id}>
                         <Accordion 
                             className="text-base text-gray-400 mb-2" 
                             label={
-                                <div className={`flex ${textIsOpen == index && "border-2 border-blue-300"}`}>
-                                    {textIsOpen == index ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
+                                <div className={`flex ${openFolderId == folder._id && "border-2 border-blue-300"}`}>
+                                    {openFolderId == folder._id ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
                                     <p className="ml-2 -mt-0.5">{folder.name}</p>
                                 </div>
                             } 
                             open={true}
-                            setOpenState={(event) => handleTextOnClick(event, index, textIsOpen == index)}
-                            openState={textIsOpen == index}
+                            setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
+                            openState={openFolderId == folder._id}
                         >
                             <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
                                     <ContextMenuTrigger id={file._id}>
                                         <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
-                                            setSelectedFileId(file._id)
-                                            setBody(file.body)
+                                            setSelectedFileId(file._id);
+                                            setBody(file.body || "");
                                         }}>{file.name}</p>
                                     </ContextMenuTrigger>                                           
                         
@@ -284,7 +278,15 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 )}
                 {selectedFileId ? 
                 <>
-                <H2 className="mb-4">{folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name}</H2>
+                <div className="mb-4">
+                {folders && (
+                    folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0) ? 
+                    <H2>{
+                        folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name
+                    
+                    }</H2> : <Skeleton height={30}/>
+                )}
+                </div>
                 <SimpleMDE
                     id="helloworld"
                     onChange={setBody}
@@ -296,8 +298,9 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                     }}
                     className="overflow-y-auto"
                 />
+                <div className="text-xs opacity-30 mt-4">{isSaved ? <p>Saved</p> : <p>Saving...</p>}</div>
                 </> : <div className="flex items-center justify-center text-center h-1/2">
-                    <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {textIsOpen === -1 ? "folder to store your files" : "file"}.</p>
+                    <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                 </div>}
             </div>
 
