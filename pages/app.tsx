@@ -108,7 +108,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             }
         }).catch(e => {
             setIsLoading(false);
-            setError("An unknown error occurred.");
+            setError(e);
             console.log(e);
         });
     }
@@ -131,7 +131,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             }
         }).catch(e => {
             setIsLoading(false);
-            setError("An unknown error occurred.");
+            setError(e);
             console.log(e);
         });
     }
@@ -152,7 +152,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             }
         }).catch(e => {
             setIsLoading(false);
-            setError("An unknown error occurred.");
+            setError(e);
             console.log(e);
         });
     }
@@ -185,7 +185,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             }
         }).catch(e => {
             setIsLoading(false);
-            setError("An unknown error occurred.");
+            setError(e);
             console.log(e);
         });
     }
@@ -279,7 +279,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 {error && (
                     <p className="text-red-500 mr-0">{error}</p>
                 )}
-                {selectedFileId && 
+                {selectedFileId ? 
                 <>
                 <H2 className="mb-4">{folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name}</H2>
                 <SimpleMDE
@@ -293,7 +293,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                     }}
                     className="overflow-y-auto"
                 />
-                </>}
+                </> : <div className="flex items-center justify-center text-center"><p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {textIsOpen === -1 ? "folder to store your files" : "file"}.</p></div>}
             </div>
 
         </Container>
