@@ -9,13 +9,15 @@ export function useKey(key, cb) {
 
     useEffect(() => {
       const handleKeyPress = (e) => {
+        // console.log(e.code + " is pressed")
         if(e.code === key) {
             callbackRef.current(e)
         }
       }
 
-      document.addEventListener("keypress", handleKeyPress)
-      return () => document.removeEventListener("keypress", handleKeyPress)
+      document.addEventListener("keydown", handleKeyPress)
+      return () => document.removeEventListener("keydown", handleKeyPress)
+      // "keydown" instead of "keypress" allows us to use ctrl, alt, escape, etc.
     }, [key])
 }
 

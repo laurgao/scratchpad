@@ -1,10 +1,12 @@
 import axios from "axios";
 import { format } from "date-fns";
+import Mousetrap from "mousetrap";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { ContextMenu, ContextMenuTrigger, MenuItem } from "react-contextmenu";
+import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import Accordion from "react-robust-accordion";
@@ -41,19 +43,35 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     useEffect(() => {if (selectedFileId) saveFile()}, [body])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
 
-    useKey("KeyN", (e) => {
-        if (!isNewFolder) {
-            setIsNewFolder(true);
-            e.preventDefault();
-            waitForEl("new-file");
-        }
-    });
+    // useKey("KeyN", (e) => {
+    //     if (!isNewFolder) {
+    //         setIsNewFolder(true);
+    //         e.preventDefault();
+    //         waitForEl("new-file");
+    //     }
+    // });
     useKey("Enter", (e) => {
         if (isNewFolder) {
             e.preventDefault();
             onSubmit();
         }
     })
+    useKey("Escape", (e) => {
+        if (isNewFolder) {
+            e.preventDefault();
+            setIsNewFolder(false);
+        }
+    })
+    Mousetrap.bind(['command+f', 'ctrl+f'], function(e) { 
+        if (!isNewFolder) {
+            e.preventDefault();
+            setIsNewFolder(true);
+            waitForEl("new-file");
+        } 
+        // console.log("key is pressed", e)
+        // console logging e gives some interesting data
+    });
+
 
     const handleTextOnClick = (event: any, index: number, currentIsOpen: boolean) => {
         if (currentIsOpen) {
@@ -184,10 +202,23 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                         id="new-file"
                     />
                 </>}
-                <div className="text-xs text-gray-400 mb-8">
-                    {isNewFolder ? <p>Enter to save</p> : <Button onClick={() => setIsNewFolder(true)} className="flex align-center">
-                        <FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"} (n)</p>
-                    </Button>}
+                <div className="text-xs text-gray-400 mb-6">
+                    {isNewFolder ? <p>Enter to save<br/>Esc to exit</p> : 
+                    <ReactHover options={{
+                        followCursor: true,
+                        shiftX: 20,
+                        shiftY: 0,
+                      }}>
+                        <Trigger type="trigger">
+                            <Button onClick={() => setIsNewFolder(true)} className="flex align-center">
+                                <FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"}</p>
+                            </Button>
+                        </Trigger>
+                        <Hover type="hover">
+                            <div className="transition bg-white border border-gray-400 p-1">ctrl/command + f</div>
+                        </Hover>
+                  </ReactHover>
+                    }
                 </div>
                 {folders && folders.map((folder, index) => 
                     <div key={folder._id} >
