@@ -104,7 +104,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             } else {
                 console.log("Folder created! ✨", res.data);
                 setIter(iter + 1);
-                setFileName("");
+                setFileName(dateFileName);
             }
         }).catch(e => {
             setIsLoading(false);
@@ -162,6 +162,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
         } else {
             createNewFile()
         }
+        setIsNewFolder(false);
     }
 
     function deleteFile(fileId: string, type: "file" | "folder" = "file") {
