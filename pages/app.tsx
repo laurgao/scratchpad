@@ -77,7 +77,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             } 
         }
 
-        Mousetrap.bind(['command+/', 'ctrl+/'], onNewSnippetShortcut);
+        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewSnippetShortcut);
 
         return () => {
             Mousetrap.unbind(['command+/', 'ctrl+/'], onNewSnippetShortcut);
@@ -224,7 +224,10 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                         shiftY: 0,
                       }}>
                         <Trigger type="trigger">
-                            <Button onClick={() => setIsNewFolder(true)} className="flex align-center">
+                            <Button onClick={() => {
+                                setIsNewFolder(true);
+                                waitForEl("new-file");
+                            }} className="flex items-center w-full">
                                 <FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"}</p>
                             </Button>
                         </Trigger>
@@ -293,7 +296,9 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                     }}
                     className="overflow-y-auto"
                 />
-                </> : <div className="flex items-center justify-center text-center"><p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {textIsOpen === -1 ? "folder to store your files" : "file"}.</p></div>}
+                </> : <div className="flex items-center justify-center text-center h-1/2">
+                    <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {textIsOpen === -1 ? "folder to store your files" : "file"}.</p>
+                </div>}
             </div>
 
         </Container>
