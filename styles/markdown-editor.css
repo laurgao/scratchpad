@@ -19,7 +19,7 @@ div.CodeMirror-sizer {
 }
 
 div.CodeMirror-vscrollbar {
-    display: none
+    display: none !important;
 }
 
 
