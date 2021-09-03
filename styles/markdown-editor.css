@@ -18,6 +18,10 @@ div.CodeMirror-sizer {
     border-right-width: 0 !important;
 }
 
+div.CodeMirror-vscrollbar {
+    display: none
+}
+
 
 /* .CodeMirror-code,
 .CodeMirror-sizer,
