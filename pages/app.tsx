@@ -1,6 +1,7 @@
 import axios from "axios";
 import { format } from "date-fns";
 import Mousetrap from "mousetrap";
+import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
 import { useRouter } from "next/router";
@@ -43,13 +44,6 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     useEffect(() => {if (selectedFileId) saveFile()}, [body])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
 
-    // useKey("KeyN", (e) => {
-    //     if (!isNewFolder) {
-    //         setIsNewFolder(true);
-    //         e.preventDefault();
-    //         waitForEl("new-file");
-    //     }
-    // });
     useKey("Enter", (e) => {
         if (isNewFolder) {
             e.preventDefault();
@@ -62,14 +56,32 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             setIsNewFolder(false);
         }
     })
-    Mousetrap.bind(['command+f', 'ctrl+f'], function(e) { 
-        if (!isNewFolder) {
+    // ['command+f', 'ctrl+f']
+    // Mousetrap.bind('ctrl+f', function(e) { 
+    //     if (!isNewFolder) {
+    //         e.preventDefault();
+    //         setIsNewFolder(true);
+    //         waitForEl("new-file");
+    //     } 
+    //     // console.log("key is pressed", e)
+    //     // console logging e gives some interesting data
+    // });
+    // / returning false stops the event and prevents default browser events
+    // key('ctrl+r', function(){ alert('stopped reload!'); return false });
+    useEffect(() => {
+        function onNewSnippetShortcut(e) {
             e.preventDefault();
-            setIsNewFolder(true);
-            waitForEl("new-file");
-        } 
-        // console.log("key is pressed", e)
-        // console logging e gives some interesting data
+            if (!isNewFolder) {
+                setIsNewFolder(true);
+                waitForEl("new-file");
+            } 
+        }
+
+        Mousetrap.bind(['command+/', 'ctrl+/'], onNewSnippetShortcut);
+
+        return () => {
+            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewSnippetShortcut);
+        };
     });
 
 
@@ -215,7 +227,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                             </Button>
                         </Trigger>
                         <Hover type="hover">
-                            <div className="transition bg-white border border-gray-400 p-1">ctrl/command + f</div>
+                            <div className="transition bg-white border border-gray-400 p-1">ctrl/command + /</div>
                         </Hover>
                   </ReactHover>
                     }
@@ -235,24 +247,22 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                             setOpenState={(event) => handleTextOnClick(event, index, textIsOpen == index)}
                             openState={textIsOpen == index}
                         >
-                            <>
                             <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
-                                <>
-                                <ContextMenuTrigger id={file._id}>
-                                    <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
-                                        setSelectedFileId(file._id)
-                                        setBody(file.body)
-                                    }}>{file.name}</p>
-                                </ContextMenuTrigger>                                           
-                    
-                                <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
-                                    <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
-                                        <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
-                                    </MenuItem>
-                                </ContextMenu>
-                                </>
+                                <div key={file._id}>
+                                    <ContextMenuTrigger id={file._id}>
+                                        <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
+                                            setSelectedFileId(file._id)
+                                            setBody(file.body)
+                                        }}>{file.name}</p>
+                                    </ContextMenuTrigger>                                           
+                        
+                                    <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
+                                        <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
+                                            <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </div>
                             )}</div>
-                            </>
                         </Accordion>
                         </ContextMenuTrigger>
                         <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10">
@@ -296,9 +306,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     try {
         await dbConnect();
         const thisUser = await UserModel.findOne({email: session.user.email});
-        return thisUser ? {props: {user: cleanForJSON(thisUser)}} : {redirect: {permanent: false, destination: "/auth/welcome"}};
+        return thisUser ? {props: {user: cleanForJSON(thisUser)}} : {redirect: {permanent: false, destination: "/"}};
     } catch (e) {
         console.log(e);
-        return {redirect: {permanent: false, destination: "/auth/welcome"}};
+        return {notFound: true};
     }
 };
