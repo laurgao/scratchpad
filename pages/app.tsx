@@ -34,7 +34,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     const [body, setBody] = useState<string>("body text");
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
-    const [textIsOpen, setTextIsOpen] = useState<number>(0);
+    const [textIsOpen, setTextIsOpen] = useState<number>(-1);
     const [selectedFileId, setSelectedFileId] = useState<string>("");
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     
@@ -48,6 +48,12 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             waitForEl("new-file");
         }
     });
+    useKey("Enter", (e) => {
+        if (isNewFolder) {
+            e.preventDefault();
+            onSubmit();
+        }
+    })
 
     const handleTextOnClick = (event: any, index: number, currentIsOpen: boolean) => {
         if (currentIsOpen) {
@@ -112,7 +118,6 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             } else {
                 console.log("File saved! ✨", res.data);
                 setIter(iter + 1);
-                setFileName("");
             }
         }).catch(e => {
             setIsLoading(false);
@@ -154,7 +159,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     }
     
     return (
-        <Container className="flex gap-12" width="7xl">
+        <Container className="flex gap-12 h-screen overflow-hidden" width="full">
             <SEO />
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
@@ -170,83 +175,83 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             </Modal>}
             <div style={{maxWidth: 150}}>
                 {isNewFolder && <>
-                    <form>
-                        <Input 
-                            value={fileName}
-                            setValue={setFileName}
-                            type="text"
-                            placeholder="Videos"
-                            my={4}
-                            id="new-file"
-                        />
-                        <input type="submit" className="hidden" onClick={onSubmit} />
-                    </form>
+                    <Input 
+                        value={fileName}
+                        setValue={setFileName}
+                        type="text"
+                        placeholder={dateFileName}
+                        my={0}
+                        id="new-file"
+                    />
                 </>}
-                <Button onClick={() => setIsNewFolder(true)} className="text-gray-400 mb-4 text-xs flex align-center"><FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"} (n)</p></Button>
+                <div className="text-xs text-gray-400 mb-8">
+                    {isNewFolder ? <p>Enter to save</p> : <Button onClick={() => setIsNewFolder(true)} className="flex align-center">
+                        <FaPlus/><p className="ml-2">New {textIsOpen === -1 ? "folder" : "file"} (n)</p>
+                    </Button>}
+                </div>
                 {folders && folders.map((folder, index) => 
-                    <>
-                    <ContextMenuTrigger id={folder._id}>
-                    <Accordion 
-                        key={folder._id} 
-                        className="text-base text-gray-400 mb-2" 
-                        label={
-                            <div className={`flex ${textIsOpen == index && "border-2 border-blue-300"}`}>
-                                {textIsOpen == index ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
-                                <p className="ml-2 -mt-0.5">{folder.name}</p>
-                            </div>
-                        } 
-                        open={true}
-                        setOpenState={(event) => handleTextOnClick(event, index, textIsOpen == index)}
-                        openState={textIsOpen == index}
-                    >
-                        <>
-                        <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
+                    <div key={folder._id} >
+                        <ContextMenuTrigger id={folder._id}>
+                        <Accordion 
+                            className="text-base text-gray-400 mb-2" 
+                            label={
+                                <div className={`flex ${textIsOpen == index && "border-2 border-blue-300"}`}>
+                                    {textIsOpen == index ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
+                                    <p className="ml-2 -mt-0.5">{folder.name}</p>
+                                </div>
+                            } 
+                            open={true}
+                            setOpenState={(event) => handleTextOnClick(event, index, textIsOpen == index)}
+                            openState={textIsOpen == index}
+                        >
                             <>
-                            <ContextMenuTrigger id={file._id}>
-                                <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
-                                    setSelectedFileId(file._id)
-                                    setBody(file.body)
-                                }}>{file.name}</p>
-                            </ContextMenuTrigger>                                           
-                
-                            <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
-                                <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
-                                    <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
-                                </MenuItem>
-                            </ContextMenu>
+                            <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
+                                <>
+                                <ContextMenuTrigger id={file._id}>
+                                    <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
+                                        setSelectedFileId(file._id)
+                                        setBody(file.body)
+                                    }}>{file.name}</p>
+                                </ContextMenuTrigger>                                           
+                    
+                                <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
+                                    <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
+                                        <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
+                                    </MenuItem>
+                                </ContextMenu>
+                                </>
+                            )}</div>
                             </>
-                        )}</div>
-                        </>
-                    </Accordion>
-                    </ContextMenuTrigger>
-                    <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10">
-                        <MenuItem onClick={() => {setToDeleteItem(folder)}} className="flex hover:bg-gray-50 p-4">
-                            <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
-                        </MenuItem>
-                    </ContextMenu>
-                    </>
+                        </Accordion>
+                        </ContextMenuTrigger>
+                        <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10">
+                            <MenuItem onClick={() => {setToDeleteItem(folder)}} className="flex hover:bg-gray-50 p-4">
+                                <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
+                            </MenuItem>
+                        </ContextMenu>
+                    </div>
                 )}
             </div>
             <div className="prose content flex-grow">
+                {error && (
+                    <p className="text-red-500 mr-0">{error}</p>
+                )}
                 {selectedFileId && 
                 <>
-                <H2 className="mb-4">{folders && folders.filter(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0)[0].fileArr[0].name}</H2>
+                <H2 className="mb-4">{folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name}</H2>
                 <SimpleMDE
                     id="helloworld"
                     onChange={setBody}
                     value={body}
                     options={{
                         spellChecker: false,
-                        placeholder: "Write your braindump here .. . ✨ F r e e d o m ✨ .  .    .",
+                        placeholder: "Unload your working memory ✨ ...",
                         toolbar: []
                     }}
+                    className="overflow-y-auto"
                 />
                 </>}
             </div>
-
-            {error && (
-                <p className="text-red-500">{error}</p>
-            )}
 
         </Container>
     );
