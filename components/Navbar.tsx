@@ -12,7 +12,7 @@ export default function Navbar() {
             <Container className="flex items-center my-4" width="full">
                 <p>Scratchpad</p>
                 <div className="ml-auto flex items-center gap-4">
-                    {(session && router.route !== "/") ? (
+                    {loading ? (session && router.route !== "/") ? (
                         <>
                         <Button onClick={() => signOut()}>Sign out</Button>
                         <img
@@ -23,7 +23,7 @@ export default function Navbar() {
                         </>
                     ) : (
                         <Button onClick={() => router.push("/")}>Sign in</Button>
-                    )}
+                    ) : <p>Loading...</p>}
                 </div>
             </Container>
         </div>
