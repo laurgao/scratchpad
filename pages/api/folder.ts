@@ -65,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     const savedFolder = await newFolder.save();
                     
-                    return res.status(200).json({message: "Object created", id: savedFolder._id.toString()});
+                    return res.status(200).json({message: "Folder created! ✨", id: savedFolder._id.toString()});
                 }            
             } catch (e) {
                 return res.status(500).json({message: e});            
@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await FolderModel.deleteOne({_id: req.body.id});
                 await FileModel.deleteMany({folder: req.body.id});
                 
-                return res.status(200).json({message: "Object deleted"});
+                return res.status(200).json({message: "Folder deleted! 🗑️"});
             } catch (e) {
                 return res.status(500).json({message: e});
             }

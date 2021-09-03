@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     await thisObject.save();
                     
-                    return res.status(200).json({message: "Object updated"});                            
+                    return res.status(200).json({message: "File saved! ✨"});                            
                 } else {
                     if (!(req.body.name && req.body.folder)) {
                         return res.status(406);            
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     const savedFile = await newFile.save();
                     
-                    return res.status(200).json({message: "Object created", id: savedFile._id.toString()});
+                    return res.status(200).json({message: "File created! ✨", id: savedFile._id.toString()});
                 }            
             } catch (e) {
                 return res.status(500).json({message: e});            
@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 
                 await FileModel.deleteOne({_id: req.body.id});
                 
-                return res.status(200).json({message: "Object deleted"});
+                return res.status(200).json({message: "File deleted! 🗑️"});
             } catch (e) {
                 return res.status(500).json({message: e});
             }

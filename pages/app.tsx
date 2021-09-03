@@ -102,7 +102,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setError(res.data.error);
                 setIsLoading(false);
             } else {
-                console.log("Folder created! ✨", res.data);
+                console.log(res.data.message);
                 setIter(iter + 1);
                 setFileName(dateFileName);
             }
@@ -124,9 +124,10 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setError(res.data.error);
                 setIsLoading(false);
             } else {
-                console.log("File created! ✨", res.data);
+                console.log(res.data.message);
                 setIter(iter + 1);
                 setFileName(dateFileName);
+                setSelectedFileId(res.data.id)
             }
         }).catch(e => {
             setIsLoading(false);
@@ -146,7 +147,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setError(res.data.error);
                 setIsLoading(false);
             } else {
-                console.log("File saved! ✨", res.data);
+                console.log(res.data.message);
                 setIter(iter + 1);
             }
         }).catch(e => {
@@ -177,7 +178,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                 setError(res.data.error);
                 setIsLoading(false);
             } else {
-                console.log(`${type} deleted! ✨`, res.data);
+                console.log(res.data.message);
                 setToDeleteItem(null);
                 if (type === "file" && selectedFileId === fileId) setSelectedFileId("");
                 setIter(iter + 1);
