@@ -1,8 +1,15 @@
 module.exports = {
-    purge: [
+    purge: {
+        enabled: true,
+        preserveHtmlElements: false,
+        content: [
         './**/*.html',
         './**/*.tsx',
-    ],
+        ],
+        options: {
+            safelist: ["hover"],
+        },
+    },
     theme: {
         container: {
             center: true,
