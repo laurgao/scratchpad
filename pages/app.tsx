@@ -40,7 +40,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     const [selectedFileId, setSelectedFileId] = useState<string>("");
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [isSaved, setIsSaved] = useState<boolean>(true);
-    
+
     useEffect(() => {if (selectedFileId) {
         setIsSaved(false);
         saveFile();
@@ -190,7 +190,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
                     <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
-                    <div className="flex items-center gap-2 mt-2 justify-center">
+                    <div className="flex items-center justify-center" style={{gridGap: 16, marginTop: 8}}>
                         <Button 
                             onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
                             // isLoading={isLoading}
@@ -247,7 +247,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                             setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
                             openState={openFolderId == folder._id}
                         >
-                            <div className="text-base text-gray-600 mb-6 mt-8">{folder.fileArr && folder.fileArr.map(file => 
+                            <div className="text-base text-gray-600 mb-6" style={{marginLeft: 24, marginTop: 8}}>{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
                                     <ContextMenuTrigger id={file._id}>
                                         <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
@@ -256,7 +256,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                                         }}>{file.name}</p>
                                     </ContextMenuTrigger>                                           
                         
-                                    <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10">
+                                    <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10 cursor-pointer">
                                         <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
                                             <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
                                         </MenuItem>
@@ -265,7 +265,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                             )}</div>
                         </Accordion>
                         </ContextMenuTrigger>
-                        <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10">
+                        <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10 cursor-pointer">
                             <MenuItem onClick={() => {setToDeleteItem(folder)}} className="flex hover:bg-gray-50 p-4">
                                 <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
                             </MenuItem>

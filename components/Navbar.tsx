@@ -11,7 +11,7 @@ export default function Navbar() {
         <div className="w-full sticky top-0">
             <Container className="flex items-center my-4" width="full">
                 <p>Scratchpad</p>
-                <div className="ml-auto flex items-center gap-4">
+                <div className="ml-auto flex items-center" style={{gridGap: 16}}>
                     {!loading ? (session && router.route !== "/") ? (
                         <>
                         <Button onClick={() => signOut()}>Sign out</Button>
