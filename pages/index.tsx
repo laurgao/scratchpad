@@ -7,12 +7,24 @@ import { FileModel } from "../models/File";
 import dbConnect from "../utils/dbConnect";
 import { format } from "date-fns";
 import Button from "../components/Button";
+import H2 from "../components/H2";
+import SEO from "../components/SEO";
+import Container from "../components/Container";
 
 export default function Home(props: {loggedIn: boolean}) {
     return (
-        <div className="flex items-center justify-center h-screen">
-            {props.loggedIn ? <SignInButton /> : <Button href="/app">Visit dashboard</Button>}
-        </div>
+        <>
+        <SEO />
+        <Container>
+            <div style={{backgroundColor: "rgb(147, 197, 253)", position: "absolute", height: "40vh", width: "100vw", top: "calc(-100vh + 170%)",  left: 0, zIndex: -10, transform: "skew(0deg, -5deg)",} /* tailwind blue 300 */ }/>
+            <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
+            <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
+            <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
+            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <Button href="/app">Visit dashboard</Button> : <SignInButton />}</div>
+            <img src="/hero.png"/>
+            </div>
+        </Container>
+        </>
     );
 }
 

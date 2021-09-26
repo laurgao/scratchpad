@@ -2,29 +2,29 @@ import {NextSeo} from "next-seo";
 import {useRouter} from "next/router";
 
 export default function SEO({
-                                  title = "NextJS starter: save hours of boilerplate setup",
-                                  description = "next-mongodb-nextauth-example allows you to skip hours of boilerplate setup with a single command when developing your app.",
+                                  title = "Scratchpad: Unload your working memory in the centralized place you're supposed to braindump incoherent stuff.",
+                                  description = "Never clog your good notes with incoherent stuff again.",
                                   imgUrl = null,
                                   authorUsername = null,
                                   publishedDate = null,
                                   noindex = false,
                               }: { title?: string, description?: string, imgUrl?: string, authorUsername?: string, publishedDate?: string, noindex?: boolean }) {
     const router = useRouter();
-    const fullTitle = title + (router.asPath === "/" ? "" : " | YourApp");
+    const fullTitle = title + (router.asPath === "/" ? "" : " | Scratchpad");
 
     let openGraph = {
         title: fullTitle,
         description: description,
-        url: "https://your-domain.com" + router.asPath,
+        url: "https://scratchie.vercel.app" + router.asPath,
         images: imgUrl ? [
             { url: imgUrl }
         ] : [
-            { url: "https://your-domain.com/defaultImage.png" }
+            { url: "https://scratchie.vercel.app/hero.png" }
         ],
     };
 
     let twitter = {
-        site: "@your-at",
+        site: "@laurgao",
         cardType: imgUrl ? "summary_large_image" : "summary",
     };
 
