@@ -25,9 +25,10 @@ import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { useKey, waitForEl } from "../utils/key";
 import { DatedObj, FolderObjGraph, UserObj } from "../utils/types";
+import "easymde/dist/easymde.min.css";
 
 export default function App(props: { user: DatedObj<UserObj> }) {
-    const dateFileName = format(new Date(), "yyyy-MM-dd")
+    const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [error, setError] = useState<string>(null);
     const [iter, setIter] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -60,19 +61,24 @@ export default function App(props: { user: DatedObj<UserObj> }) {
             setIsNewFolder(false);
         }
     })
+
+    function onCreateNewFolder() {
+        if (!openFolderId) setFileName("");
+        else setFileName(dateFileName);
+        setIsNewFolder(true);
+        waitForEl("new-file");
+    }
+
     useEffect(() => {
-        function onNewSnippetShortcut(e) {
+        function onNewFolderShortcut(e) {
             e.preventDefault();
-            if (!isNewFolder) {
-                setIsNewFolder(true);
-                waitForEl("new-file");
-            } 
+            if (!isNewFolder) onCreateNewFolder()
         }
 
-        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewSnippetShortcut);
+        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
 
         return () => {
-            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewSnippetShortcut);
+            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
         };
     });
 
@@ -86,6 +92,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     }
     function createNewFolder() {
         setIsLoading(true);
+        if (!fileName) setFileName("Untitled folder");
 
         axios.post("/api/folder", {
             name: fileName,
@@ -218,11 +225,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                         shiftY: 0,
                       }}>
                         <Trigger type="trigger">
-                            <Button onClick={() => {
-                                if (!openFolderId) setFileName("");
-                                setIsNewFolder(true);
-                                waitForEl("new-file");
-                            }} className="flex items-center w-full">
+                            <Button onClick={onCreateNewFolder} className="flex items-center w-full">
                                 <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
                             </Button>
                         </Trigger>

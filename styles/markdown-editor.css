@@ -1,4 +1,4 @@
-.EasyMDEContainer .editor-toolbar {
+/* .EasyMDEContainer .editor-toolbar {
     font-size: 1rem;
     border: 0;
     padding-left: 0;
@@ -36,7 +36,7 @@ div.CodeMirror-vscrollbar {
     word-wrap: break-word;
     overflow: hidden;
 } */
-
+/* 
 pre {
     overflow-x: auto;
     white-space: pre-wrap;
@@ -44,7 +44,7 @@ pre {
     white-space: -pre-wrap;
     white-space: -o-pre-wrap;
     word-wrap: break-word;
-}
+} */
 
 
 /* .EasyMDEContainer div.CodeMirror {
@@ -54,7 +54,7 @@ pre {
     padding-right: 0;
 } */
 
-div.CodeMirror-measure,
+/* div.CodeMirror-measure,
 div.CodeMirror-cursors {
     display: none;
 }
@@ -67,34 +67,55 @@ div.editor-statusbar span {
 div.editor-statusbar {
     font-size: 0.75rem;
     opacity: 0.30;
-    position: sticky;
+    position: sticky; */
     /* bottom: 4; */
     /* right: 4; */
     /* z-index: 10; */
     /* margin-top: 4rem; */
-}
+/* } */
 
-.CodeMirror-placeholder {
+/* .CodeMirror-placeholder {
     opacity: 0.35;
 }
 
 .CodeMirror-line::selection,
 .CodeMirror-line>span::selection,
 .CodeMirror-line>span>span::selection {
-    background-color: rgba(229, 231, 235, 0.3) !important;
-    /* Tailwind gray 100 */
+    background-color: rgba(147, 197, 253) !important;
+    z-index: -10;
 }
 
 .CodeMirror-line::-moz-selection,
 .CodeMirror-line>span::-moz-selection,
 .CodeMirror-line>span>span::-moz-selection {
-    background-color: rgba(229, 231, 235, 0.3) !important;
+    background-color: rgba(147, 197, 253) !important;
+    z-index: -10;
 }
 
 .CodeMirror-selected {
-    background-color: rgba(229, 231, 235, 0.3) !important;
+    background-color: rgba(147, 197, 253) !important;
+    z-index: -10;
 }
 
 .CodeMirror-focused .CodeMirror-selected {
-    background-color: rgba(229, 231, 235, 0.3) !important;
+    background-color: rgba(147, 197, 253) !important;
+    z-index: -10; 
+} */
+
+.EasyMDEContainer .editor-toolbar {
+    font-size: 1rem;
+    border: 0;
+    padding-left: 0;
+    padding-right: 0;
+    position: sticky;
+    top: 4rem;
+    z-index: 5;
+    background-color: white;
+}
+
+.EasyMDEContainer div.CodeMirror {
+    border: 0;
+    padding-top: 2rem;
+    padding-left: 0;
+    padding-right: 0;
 }

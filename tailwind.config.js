@@ -3,8 +3,8 @@ module.exports = {
         enabled: true,
         preserveHtmlElements: false,
         content: [
-        './**/*.html',
-        './**/*.tsx',
+            './**/*.html',
+            './**/*.tsx',
         ],
         options: {
             safelist: ["hover"],
