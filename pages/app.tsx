@@ -48,6 +48,10 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     }}, [body])
     useEffect(() => {setIsSaved(true);}, [selectedFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
+    useEffect(() => {
+        const x = document.getElementsByClassName("autosave")
+        if (x && x.length > 0) x[0].innerHTML = isSaved ? "Saved" : "Saving..."
+    }, [isSaved])
 
     useKey("Enter", (e) => {
         if (isNewFolder) {
@@ -192,7 +196,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
     }
     
     return (
-        <Container className="flex gap-12 h-screen overflow-hidden" width="full">
+        <Container className="flex gap-12" width="full">
             <SEO />
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
@@ -291,18 +295,19 @@ export default function App(props: { user: DatedObj<UserObj> }) {
                     }</H2> : <Skeleton height={30}/>
                 )}
                 </div>
-                <SimpleMDE
-                    id="helloworld"
-                    onChange={setBody}
-                    value={body}
-                    options={{
-                        spellChecker: false,
-                        placeholder: "Unload your working memory ✨ ...",
-                        toolbar: []
-                    }}
-                    className="overflow-y-auto"
-                />
-                <div className="text-xs opacity-30 mt-4">{isSaved ? <p>Saved</p> : <p>Saving...</p>}</div>
+                <div>
+                    <SimpleMDE
+                        id="helloworld"
+                        onChange={setBody}
+                        value={body}
+                        options={{
+                            spellChecker: false,
+                            placeholder: "Unload your working memory ✨ ...",
+                            toolbar: []
+                        }}
+                    />
+                </div>
+                {/* <div className="text-xs opacity-30 mt-4">{isSaved ? <p>Saved</p> : <p>Saving...</p>}</div> */}
                 </> : <div className="flex items-center justify-center text-center h-1/2">
                     <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                 </div>}

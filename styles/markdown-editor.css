@@ -119,3 +119,14 @@ div.editor-statusbar {
     padding-left: 0;
     padding-right: 0;
 }
+
+.EasyMDEContainer div.editor-statusbar {
+    position: fixed;
+    z-index: 50;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    background-color: rgb(249, 250, 251); /* Tailwind gray 100 */
+    color: rgb(156, 163, 175); /* Tailwind gray 400 */
+    border-top: 1px solid rgb(156, 163, 175);
+}
