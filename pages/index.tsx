@@ -6,23 +6,26 @@ import { FolderModel } from "../models/Folder";
 import { FileModel } from "../models/File";
 import dbConnect from "../utils/dbConnect";
 import { format } from "date-fns";
+import Button from "../components/Button";
 
-export default function Home() {
+export default function Home(props: {loggedIn: boolean}) {
     return (
         <div className="flex items-center justify-center h-screen">
-            <SignInButton />
+            {props.loggedIn ? <SignInButton /> : <Button href="/app">Visit dashboard</Button>}
         </div>
     );
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await getSession(context);
-    if (!session) return {props: {}};
+    if (!session) return {props: {loggedIn: false}};
 
     try {
         await dbConnect();
         const thisUser = await UserModel.findOne({email: session.user.email});
-        if (!thisUser) {
+        if (thisUser) return {props: {loggedIn: true}};
+
+        else {
             const newUser = await UserModel.create({
                 email: session.user.email,
                 name: session.user.name,

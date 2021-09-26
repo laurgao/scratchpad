@@ -2,6 +2,7 @@ import { signOut, useSession } from "next-auth/client";
 import { useRouter } from "next/router";
 import Button from "./Button";
 import Container from "./Container";
+import Link from "next/link";
 
 export default function Navbar() {
     const [session, loading] = useSession();
@@ -10,9 +11,9 @@ export default function Navbar() {
     return (
         <div className="w-full sticky top-0">
             <Container className="flex items-center my-4" width="full">
-                <p>Scratchpad</p>
+                <Link href="/"><a>Scratchpad</a></Link>
                 <div className="ml-auto flex items-center" style={{gridGap: 16}}>
-                    {!loading ? (session && router.route !== "/") ? (
+                    {!loading ? session ? (
                         <>
                         <Button onClick={() => signOut()}>Sign out</Button>
                         <img
