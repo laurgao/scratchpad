@@ -49,10 +49,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
                 name: "Daily"
             })
 
-            const newNote = await FileModel.create({
+            const newFile = await FileModel.create({
                 folder: newFolder._id,
                 name: format(new Date(), "yyyy-MM-dd"),
             })
+
+            newUser.lastOpenedFile = newFile._id
+            await newUser.save();
         }
 
         return {redirect: {permanent: false, destination: "/app"}};

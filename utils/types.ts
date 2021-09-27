@@ -2,6 +2,7 @@ export interface UserObj {
     email: string,
     name: string,
     image: string,
+    lastOpenedFile?: string,
 }
 
 export interface FileObj {

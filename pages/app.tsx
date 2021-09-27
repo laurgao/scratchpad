@@ -24,21 +24,22 @@ import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { useKey, waitForEl } from "../utils/key";
-import { DatedObj, FolderObjGraph, UserObj } from "../utils/types";
+import { DatedObj, FileObj, FolderObjGraph, UserObj } from "../utils/types";
 import "easymde/dist/easymde.min.css";
+import { FileModel } from "../models/File";
 
-export default function App(props: { user: DatedObj<UserObj> }) {
+export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObj> }) {
     const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [error, setError] = useState<string>(null);
     const [iter, setIter] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [fileName, setFileName] = useState<string>(dateFileName);
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
-    const [body, setBody] = useState<string>("");
+    const [body, setBody] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.body : "");
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
-    const [openFolderId, setOpenFolderId] = useState<string>("");
-    const [selectedFileId, setSelectedFileId] = useState<string>("");
+    const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
+    const [selectedFileId, setSelectedFileId] = useState<string>(props.user.lastOpenedFile || "");
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
@@ -47,6 +48,7 @@ export default function App(props: { user: DatedObj<UserObj> }) {
         saveFile();
     }}, [body])
     useEffect(() => {setIsSaved(true);}, [selectedFileId])
+    useEffect(() => {axios.post("/api/user", {lastOpenedFile: selectedFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [selectedFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
@@ -325,7 +327,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     try {
         await dbConnect();
         const thisUser = await UserModel.findOne({email: session.user.email});
-        return thisUser ? {props: {user: cleanForJSON(thisUser)}} : {redirect: {permanent: false, destination: "/"}};
+        if (!thisUser) return {redirect: {permanent: false, destination: "/"}};
+        let lastOpenedFile = {};
+        if (thisUser.lastOpenedFile) lastOpenedFile = await FileModel.findOne({_id: thisUser.lastOpenedFile})
+        return {props: {user: cleanForJSON(thisUser), lastOpenedFile: cleanForJSON(lastOpenedFile)}}
     } catch (e) {
         console.log(e);
         return {notFound: true};
