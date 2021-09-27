@@ -259,7 +259,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             <div className="text-base text-gray-600 mb-6" style={{marginLeft: 24, marginTop: 8}}>{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
                                     <ContextMenuTrigger id={file._id}>
-                                        <p className={`${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
+                                        <p className={`cursor-pointer ${selectedFileId == file._id && "border-2 border-blue-300"}`} onClick={() => {
                                             setSelectedFileId(file._id);
                                             setBody(file.body || "");
                                         }}>{file.name}</p>
