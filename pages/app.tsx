@@ -203,7 +203,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
                     <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
-                    <div className="flex items-center justify-center" style={{gridGap: 16, marginTop: 8}}>
+                    <div className="flex items-center justify-center gap-4 mt-2">
                         <Button 
                             onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
                             // isLoading={isLoading}
@@ -247,7 +247,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         <Accordion 
                             className="text-base text-gray-400 mb-2" 
                             label={
-                                <div className={`flex ${openFolderId == folder._id && "border-2 border-blue-300 rounded-md"}`}>
+                                <div className={`flex rounded-md border-2 pl-2 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}>
                                     {openFolderId == folder._id ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
                                     <p className="ml-2 -mt-0.5">{folder.name}</p>
                                 </div>
@@ -256,10 +256,10 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
                             openState={openFolderId == folder._id}
                         >
-                            <div className="text-base text-gray-600 mb-6" style={{marginLeft: 24, marginTop: 8}}>{folder.fileArr && folder.fileArr.map(file => 
+                            <div className="text-base text-gray-600 mb-6 ml-4 mt-2">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
                                     <ContextMenuTrigger id={file._id}>
-                                        <p className={`cursor-pointer ${selectedFileId == file._id && "border-2 border-blue-300 rounded-md"}`} onClick={() => {
+                                        <p className={`cursor-pointer rounded-md border-2 pl-2 ${selectedFileId == file._id ? "border-blue-300" : "border-transparent"}`} onClick={() => {
                                             setSelectedFileId(file._id);
                                             setBody(file.body || "");
                                         }}>{file.name}</p>
