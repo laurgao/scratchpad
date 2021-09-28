@@ -242,14 +242,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     }
                 </div>
                 {folders && folders.map(folder => 
-                    <div key={folder._id} >
+                    <div key={folder._id} className="-mt-0.5">
                         <ContextMenuTrigger id={folder._id}>
                         <Accordion 
                             className="text-base text-gray-400 mb-2" 
                             label={
-                                <div className={`flex rounded-md border-2 pl-2 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}>
+                                <div className={`flex items-center rounded-md border-2 pl-1 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}>
                                     {openFolderId == folder._id ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
-                                    <p className="ml-2 -mt-0.5">{folder.name}</p>
+                                    <p className="ml-2">{folder.name}</p>
                                 </div>
                             } 
                             open={true}
