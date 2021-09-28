@@ -15,8 +15,8 @@ export default function Home(props: {loggedIn: boolean}) {
     return (
         <>
         <SEO />
+        <div style={{backgroundColor: "rgb(147, 197, 253)", position: "absolute", height: "40vh", width: "100%", top: "70vh",  left: 0, zIndex: -10, transform: "skew(0deg, -5deg)",} /* tailwind blue 300 */ }/>
         <Container>
-            <div style={{backgroundColor: "rgb(147, 197, 253)", position: "absolute", height: "40vh", width: "100vw", top: "calc(-100vh + 170%)",  left: 0, zIndex: -10, transform: "skew(0deg, -5deg)",} /* tailwind blue 300 */ }/>
             <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
             <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
