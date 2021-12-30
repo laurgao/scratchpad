@@ -15,7 +15,7 @@ export default function Home(props: {loggedIn: boolean}) {
     return (
         <>
         <SEO />
-        <div style={{backgroundColor: "rgb(147, 197, 253)", position: "absolute", height: "40vh", width: "100%", top: "70vh",  left: 0, zIndex: -10, transform: "skew(0deg, -5deg)",} /* tailwind blue 300 */ }/>
+        <div className="bg-blue-300 absolute left-0 w-full" style={{height: "40vh", top: "70vh", zIndex: -10, transform: "skew(0deg, -5deg)",}}/>
         <Container>
             <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>

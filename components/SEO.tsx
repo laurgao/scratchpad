@@ -2,7 +2,7 @@ import {NextSeo} from "next-seo";
 import {useRouter} from "next/router";
 
 export default function SEO({
-                                  title = "Scratchpad: Unload your working memory in the centralized place you're supposed to braindump incoherent stuff.",
+                                  title = "",
                                   description = "Never clog your good notes with incoherent stuff again.",
                                   imgUrl = null,
                                   authorUsername = null,
@@ -10,7 +10,10 @@ export default function SEO({
                                   noindex = false,
                               }: { title?: string, description?: string, imgUrl?: string, authorUsername?: string, publishedDate?: string, noindex?: boolean }) {
     const router = useRouter();
-    const fullTitle = title + (router.asPath === "/" ? "" : " | Scratchpad");
+
+    let fullTitle;
+    if (!title) fullTitle = "Scratchpad: Unload your working memory in the centralized place you're supposed to braindump incoherent stuff." 
+    else fullTitle = title + " | Scratchpad";
 
     let openGraph = {
         title: fullTitle,

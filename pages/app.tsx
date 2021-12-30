@@ -238,8 +238,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         <Hover type="hover">
                             <div className="transition bg-white border border-gray-400 p-1">(win) ctrl + /<br/>(mac) cmd + /</div>
                         </Hover>
-                  </ReactHover>
-                    }
+                    </ReactHover>}
                 </div>
                 {folders && folders.map(folder => 
                     <div key={folder._id} className="-mt-0.5">
@@ -293,7 +292,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0) ? 
                     <H2>{
                         folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name
-                    
                     }</H2> : <Skeleton height={30}/>
                 )}
                 </div>
