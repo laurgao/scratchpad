@@ -38,13 +38,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [sectionBody, setSectionBody] = useState<string>("");
     const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
-    const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
     const [selectedFileId, setSelectedFileId] = useState<string>(props.user.lastOpenedFile || "");
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [isSaved, setIsSaved] = useState<boolean>(true);
+    const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
+    const [newSectionName, setNewSectionName] = useState<string>("");
 
-    console.log(foldersData)
+    const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
 
     const currentFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId) : null
 
@@ -154,10 +155,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         });
     }
 
-    function saveSelection(selectionID) {
-        axios.post("/api/section", {id: selectionID, body: sectionBody}).then(res => console.log(res.data.message)).catch(e => console.log(e))
-    }
-
     function saveFile() {
         setIsLoading(true);
 
@@ -212,7 +209,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             console.log(e);
         });
     }
-    console.log(currentFile && currentFile._id)
     
     return (
         <Container className="flex gap-12" width="full">
@@ -297,7 +293,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </div>
-            <div className="prose content flex-grow">
+            <div className="prose content flex-grow pb-8">
                 {error && (
                     <p className="text-red-500 mr-0">{error}</p>
                 )}
@@ -310,38 +306,57 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 {/* File sections */}
                 <div>
                     {currentFile && <div className="flex flex-col">
-                        <hr/>
-                        <Button onClick={() => {
-                            console.log("Making new section!");
-                            axios.post("/api/section", {
-                                file: currentFile._id,
-                            }).then(res => {
-                                if (res.data.error) {
-                                    setError(res.data.error);
-                                    setIsLoading(false);
-                                } else {
-                                    console.log(res.data.message);
-                                    setIter(iter + 1);
-                                }
-                            }).catch(e => {
-                                setIsLoading(false);
-                                setError(e);
-                                console.log(e);
-                            });
-                        }} className="ml-auto"><FaPlus size={10} className="text-gray-400"/></Button>
+                        {isCreateNewSection ? (
+                            <div>
+                                <Input 
+                                    value={newSectionName}
+                                    setValue={setNewSectionName}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter") {
+                                            console.log("Making new section!");
+                                            axios.post("/api/section", {
+                                                file: currentFile._id,
+                                                name: newSectionName,
+                                            }).then(res => {
+                                                if (res.data.error) {
+                                                    setError(res.data.error);
+                                                    setIsLoading(false);
+                                                } else {
+                                                    console.log(res.data.message);
+                                                    setNewSectionName("");
+                                                    setIter(iter + 1);
+                                                }
+                                            }).catch(e => {
+                                                setIsLoading(false);
+                                                setError(e);
+                                                console.log(e);
+                                            });
+                                            setIsCreateNewSection(false);
+                                        } else if (e.key === "Escape") {
+                                            setIsCreateNewSection(false);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <Button onClick={() => setIsCreateNewSection(true)} className="ml-auto"><FaPlus size={10} className="text-gray-400"/></Button>
+                        )}
                         <hr/>
                     </div>}
                     {currentFile && currentFile.sectionArr.map(s => 
                         <>
                         <Accordion
                             label={
-                                <div className="flex" 
-                                onClick={() => {
-                                    setSectionBody(s.body || "")
-                                    setOpenSection(s)
-                                }}>
-                                    <p>{s.name}</p>
-                                    <FaAngleLeft size={10} className="text-gray-400 p-2"/>
+                                <div 
+                                    className="flex p-2 text-gray-400 items-center" 
+                                    style={{height: "30px"}}
+                                    onClick={() => {
+                                        setSectionBody(s.body || "")
+                                        setOpenSection(s)
+                                    }}
+                                >
+                                    <p className="text-base">{s.name}</p>
+                                    <FaAngleLeft size={14} className="ml-auto"/>
                                 </div>
                             }                            
                             setOpenState={(event) => handleObjectOnClick(event, s, openSection && openSection._id == s._id)}

@@ -12,7 +12,7 @@ export default function SEO({
     const router = useRouter();
 
     let fullTitle;
-    if (!title) fullTitle = "Scratchpad: Unload your working memory in the centralized place you're supposed to braindump incoherent stuff." 
+    if (!title) fullTitle = "Scratchpad: Unload your working memory in a centralized place." 
     else fullTitle = title + " | Scratchpad";
 
     let openGraph = {
