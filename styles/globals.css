@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 body {
-    @apply font-mono
+    @apply font-mono text-lg
 }
 
 .up-spinner {
