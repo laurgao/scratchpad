@@ -1,5 +1,6 @@
 import axios from "axios";
 import { format } from "date-fns";
+import "easymde/dist/easymde.min.css";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
@@ -7,7 +8,7 @@ import { getSession } from "next-auth/client";
 import { useEffect, useState } from "react";
 import { ContextMenu, ContextMenuTrigger, MenuItem } from "react-contextmenu";
 import ReactHover, { Hover, Trigger } from "react-hover";
-import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
+import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
@@ -19,23 +20,23 @@ import H2 from "../components/H2";
 import Input from "../components/Input";
 import Modal from "../components/Modal";
 import SEO from "../components/SEO";
+import { FileModel } from "../models/File";
 import { UserModel } from "../models/User";
 import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { useKey, waitForEl } from "../utils/key";
-import { DatedObj, FileObj, FolderObjGraph, UserObj } from "../utils/types";
-import "easymde/dist/easymde.min.css";
-import { FileModel } from "../models/File";
+import { DatedObj, FileObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObj> }) {
     const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [error, setError] = useState<string>(null);
     const [iter, setIter] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [fileName, setFileName] = useState<string>(dateFileName);
+    const [newFileName, setNewFileName] = useState<string>(dateFileName);
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
-    const [body, setBody] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.body : "");
+    const [sectionBody, setSectionBody] = useState<string>("");
+    const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
@@ -43,16 +44,20 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
-    useEffect(() => {if (selectedFileId) {
+    console.log(foldersData)
+
+    const currentFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId) : null
+
+    useEffect(() => {if (selectedFileId && openSection) {
         setIsSaved(false);
         saveFile();
-    }}, [body])
+    }}, [sectionBody])
     useEffect(() => {setIsSaved(true);}, [selectedFileId])
     useEffect(() => {axios.post("/api/user", {lastOpenedFile: selectedFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [selectedFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
-        if (x && x.length > 0) x[0].innerHTML = isSaved ? "Saved" : "Saving..."
+        if (x && x.length > 0) x[x.length - 1].innerHTML = isSaved ? "Saved" : "Saving..."
     }, [isSaved])
 
     useKey("Enter", (e) => {
@@ -69,8 +74,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     })
 
     function onCreateNewFolder() {
-        if (!openFolderId) setFileName("");
-        else setFileName(dateFileName);
+        if (!openFolderId) setNewFileName("");
+        else setNewFileName(dateFileName);
         setIsNewFolder(true);
         waitForEl("new-file");
     }
@@ -96,12 +101,19 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             setOpenFolderId(folderId);
         }
     }
+    const handleObjectOnClick = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
+        if (currentIsOpen) {
+            setOpenSection(null);
+        } else {
+            setOpenSection(object);
+        }
+    }
     function createNewFolder() {
         setIsLoading(true);
-        if (!fileName) setFileName("Untitled folder");
+        if (!newFileName) setNewFileName("Untitled folder");
 
         axios.post("/api/folder", {
-            name: fileName,
+            name: newFileName,
         }).then(res => {
             if (res.data.error) {
                 setError(res.data.error);
@@ -109,7 +121,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             } else {
                 console.log(res.data.message);
                 setIter(iter + 1);
-                setFileName(dateFileName);
+                setNewFileName(dateFileName);
             }
         }).catch(e => {
             setIsLoading(false);
@@ -122,7 +134,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         setIsLoading(true);
 
         axios.post("/api/file", {
-            name: fileName,
+            name: newFileName,
             folder: openFolderId,
         }).then(res => {
             if (res.data.error) {
@@ -131,9 +143,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             } else {
                 console.log(res.data.message);
                 setIter(iter + 1);
-                setFileName(dateFileName);
+                setNewFileName(dateFileName);
                 setSelectedFileId(res.data.id);
-                setBody("");
+                setSectionBody("");
             }
         }).catch(e => {
             setIsLoading(false);
@@ -142,12 +154,16 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         });
     }
 
+    function saveSelection(selectionID) {
+        axios.post("/api/section", {id: selectionID, body: sectionBody}).then(res => console.log(res.data.message)).catch(e => console.log(e))
+    }
+
     function saveFile() {
         setIsLoading(true);
 
-        axios.post("/api/file", {
-            id: selectedFileId,
-            body: body,
+        axios.post("/api/section", {
+            id: openSection._id,
+            body: sectionBody,
         }).then(res => {
             if (res.data.error) {
                 setError(res.data.error);
@@ -196,6 +212,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             console.log(e);
         });
     }
+    console.log(currentFile && currentFile._id)
     
     return (
         <Container className="flex gap-12" width="full">
@@ -215,8 +232,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             <div style={{width: 150}}>
                 {isNewFolder && <>
                     <Input 
-                        value={fileName}
-                        setValue={setFileName}
+                        value={newFileName}
+                        setValue={setNewFileName}
                         type="text"
                         placeholder={`New ${!openFolderId ? "folder" : "file"}`}
                         my={0}
@@ -260,7 +277,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     <ContextMenuTrigger id={file._id}>
                                         <p className={`cursor-pointer rounded-md border-2 pl-2 ${selectedFileId == file._id ? "border-blue-300" : "border-transparent"}`} onClick={() => {
                                             setSelectedFileId(file._id);
-                                            setBody(file.body || "");
                                         }}>{file.name}</p>
                                     </ContextMenuTrigger>                                           
                         
@@ -287,26 +303,66 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 )}
                 {selectedFileId ? 
                 <>
+                {/* File title */}
                 <div className="mb-4">
-                {folders && (
-                    folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0) ? 
-                    <H2>{
-                        folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId).name
-                    }</H2> : <Skeleton height={30}/>
-                )}
+                    {currentFile ? <H2>{currentFile.name}</H2> : <Skeleton height={30}/>}
                 </div>
+                {/* File sections */}
                 <div>
-                    <SimpleMDE
-                        id="helloworld"
-                        onChange={setBody}
-                        value={body}
-                        options={{
-                            spellChecker: false,
-                            placeholder: "Unload your working memory ✨ ...",
-                            toolbar: []
-                        }}
-                    />
+                    {currentFile && <div className="flex flex-col">
+                        <hr/>
+                        <Button onClick={() => {
+                            console.log("Making new section!");
+                            axios.post("/api/section", {
+                                file: currentFile._id,
+                            }).then(res => {
+                                if (res.data.error) {
+                                    setError(res.data.error);
+                                    setIsLoading(false);
+                                } else {
+                                    console.log(res.data.message);
+                                    setIter(iter + 1);
+                                }
+                            }).catch(e => {
+                                setIsLoading(false);
+                                setError(e);
+                                console.log(e);
+                            });
+                        }} className="ml-auto"><FaPlus size={10} className="text-gray-400"/></Button>
+                        <hr/>
+                    </div>}
+                    {currentFile && currentFile.sectionArr.map(s => 
+                        <>
+                        <Accordion
+                            label={
+                                <div className="flex" 
+                                onClick={() => {
+                                    setSectionBody(s.body || "")
+                                    setOpenSection(s)
+                                }}>
+                                    <p>{s.name}</p>
+                                    <FaAngleLeft size={10} className="text-gray-400 p-2"/>
+                                </div>
+                            }                            
+                            setOpenState={(event) => handleObjectOnClick(event, s, openSection && openSection._id == s._id)}
+                            openState={openSection && openSection._id == s._id}
+                        >
+                            <SimpleMDE
+                                id={`hellosection-${s._id}`}
+                                onChange={setSectionBody}
+                                value={sectionBody}
+                                options={{
+                                    spellChecker: false,
+                                    placeholder: "Unload your working memory ✨ ...",
+                                    toolbar: []
+                                }}
+                            />
+                        </Accordion>                        
+                        <hr/>
+                        </>
+                    )}
                 </div>
+
                 {/* <div className="text-xs opacity-30 mt-4">{isSaved ? <p>Saved</p> : <p>Saving...</p>}</div> */}
                 </> : <div className="flex items-center justify-center text-center h-1/2">
                     <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
