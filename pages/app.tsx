@@ -11,6 +11,7 @@ import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
+import { Rnd } from 'react-rnd';
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
@@ -211,7 +212,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }
     
     return (
-        <Container className="flex gap-12" width="full">
+        <Container className="flex pb-10 appContainer" width="full" padding={0}>
             <SEO />
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
@@ -225,32 +226,37 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 </div>
             </Modal>}
-            <div style={{width: 150}}>
-                {isNewFolder && <>
-                    <Input 
-                        value={newFileName}
-                        setValue={setNewFileName}
-                        type="text"
-                        placeholder={`New ${!openFolderId ? "folder" : "file"}`}
-                        id="new-file"
-                    />
-                </>}
+            <div style={{height: "100px" /* this gets ignored, the child rnd can surpass it. */ }}> 
+            <Rnd default={{x: 0, y: 0, width: 200, height: "calc(100% - 275px)",}} minWidth={100} style={{position: "static", maxHeight: "300px" /* this also gets ignored */ }} className="border-gray-400 border-r-2 overflow-auto px-6" disableDragging={true} enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
                 <div className="text-xs text-gray-400 mb-6">
-                    {isNewFolder ? <p>Enter to save<br/>Esc to exit</p> : 
-                    <ReactHover options={{
-                        followCursor: true,
-                        shiftX: 20,
-                        shiftY: 0,
-                      }}>
-                        <Trigger type="trigger">
-                            <Button onClick={onCreateNewFolder} className="flex items-center w-full">
-                                <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
-                            </Button>
-                        </Trigger>
-                        <Hover type="hover">
-                            <div className="transition bg-white border border-gray-400 p-1">(win) ctrl + /<br/>(mac) cmd + /</div>
-                        </Hover>
-                    </ReactHover>}
+                    {isNewFolder ? (
+                        <>
+                        <Input 
+                            value={newFileName}
+                            setValue={setNewFileName}
+                            type="text"
+                            placeholder={`New ${!openFolderId ? "folder" : "file"}`}
+                            id="new-file"
+                            className="text-base text-black"
+                        />
+                        <p>Enter to save<br/>Esc to exit</p>
+                        </>
+                    ) : (
+                        <ReactHover options={{
+                            followCursor: true,
+                            shiftX: 20,
+                            shiftY: -70,
+                        }}>
+                            <Trigger type="trigger">
+                                <Button onClick={onCreateNewFolder} className="flex items-center w-full">
+                                    <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
+                                </Button>
+                            </Trigger>
+                            <Hover type="hover">
+                                <div className="transition bg-white border border-gray-400 p-1 z-50">(win) ctrl + /<br/>(mac) cmd + /</div>
+                            </Hover>
+                        </ReactHover>
+                    )}
                 </div>
                 {folders && folders.map(folder => 
                     <div key={folder._id} className="-mt-0.5">
@@ -291,8 +297,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </ContextMenu>
                     </div>
                 )}
+            </Rnd>
             </div>
-            <div className="prose content flex-grow pb-8">
+            <div className="flex-grow mx-10">
                 {error && (
                     <p className="text-red-500 mr-0">{error}</p>
                 )}
@@ -377,6 +384,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     placeholder: "Unload your working memory ✨ ...",
                                     toolbar: []
                                 }}
+                                className="text-lg"
                             />
                         </Accordion>                        
                         <hr/>

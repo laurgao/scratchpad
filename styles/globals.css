@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 body {
-    @apply font-mono text-lg
+    @apply font-mono
 }
 
 .up-spinner {
@@ -30,3 +30,30 @@ body {
         transform: rotate(360deg);
     }
 }
+
+
+/**********
+SCROLLBAR
+***********/
+
+/* width */
+::-webkit-scrollbar {
+    width: 15px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px rgb(219 234 254); /* tailwind blue 50 */
+    border-radius: 10px;
+  }
+   
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: rgb(147 197 253); /* tailwind blue 300 */ 
+    border-radius: 10px;
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:active {
+    background: rgb(96 165 250);; /* tailwind blue 400 */
+  }
