@@ -5,7 +5,7 @@ import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
@@ -25,7 +25,7 @@ import { UserModel } from "../models/User";
 import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
-import { useKey, waitForEl } from "../utils/key";
+import { waitForEl } from "../utils/key";
 import { DatedObj, FileObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
 const mainContainerHeight = "calc(100vh - 116px)"
@@ -66,19 +66,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         const x = document.getElementsByClassName("autosave")
         if (x && x.length > 0) x[x.length - 1].innerHTML = isSaved ? "Saved" : "Saving..."
     }, [isSaved])
-
-    useKey("Enter", (e) => {
-        if (isNewFolder) {
-            e.preventDefault();
-            onSubmit();
-        }
-    })
-    useKey("Escape", (e) => {
-        if (isNewFolder) {
-            e.preventDefault();
-            setIsNewFolder(false);
-        }
-    })
 
     function onCreateNewFolder() {
         if (!openFolderId) setNewFileName("");
@@ -254,7 +241,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         <SEO />
         {toDeleteFileForRightClickList && <RightClickMenu file={toDeleteFileForRightClickList[0]} x={toDeleteFileForRightClickList[1]} y={toDeleteFileForRightClickList[2]}/>}
         <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
-            {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
+            {toDeleteItem && <Modal isOpen={!!toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
                     <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
                     <div className="flex items-center justify-center gap-4 mt-2">
@@ -277,8 +264,17 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             placeholder={`New ${!openFolderId ? "folder" : "file"}`}
                             id="new-file"
                             className="text-base text-black"
+                            onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    onSubmit();
+                                } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setIsNewFolder(false);
+                                }
+                            }}
                         />
-                        <p>Enter to save<br/>Esc to exit</p>
+                        {!!newFileName && <p>Enter to save<br/>Esc to exit</p>}
                         </>
                     ) : (
                         <ReactHover options={{
@@ -309,7 +305,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                         setToDeleteFileForRightClickList([folder, e.clientX, e.clientY])
                                     }}
                                 >
-                                    {openFolderId == folder._id ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
+                                    {openFolderId == folder._id ? <FaAngleDown/> : <FaAngleRight/>}
                                     <p className="ml-2">{folder.name}</p>
                                 </div>
                             } 

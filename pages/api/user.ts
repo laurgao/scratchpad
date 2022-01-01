@@ -11,17 +11,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 await dbConnect();
                 
-                if (!(req.body.lastOpenedFile)) {
-                    return res.status(406);            
+                // return res.status(200).json({lastOpenedFile: req.body.lastOpenedFile, lastOpenedFileType: typeof(req.body.lastOpenedFile), f: req.body.f, ftype: typeof(req.body.f), req: cleanForJSON(req)})
+
+                // Sometimes you want to save that there is no last opened file.
+                if (typeof(req.body.lastOpenedFile) === "undefined") {
+                    return res.status(406).json({message: "Missing req.body.lastOpenedFile"});            
                 }
-                const thisObject = await UserModel.findOne({email: session.user.email});
-                if (!thisObject) return res.status(404);
+
+                const thisUser = await UserModel.findOne({email: session.user.email});
+                if (!thisUser) return res.status(404).json({message: "Account not found"});
+
+                if (req.body.lastOpenedFile === "") {
+                    thisUser.lastOpenedFile = null
+                } else {
+                    thisUser.lastOpenedFile = req.body.lastOpenedFile;
+                }                
                 
-                thisObject.lastOpenedFile = req.body.lastOpenedFile;
+                await thisUser.save();
                 
-                await thisObject.save();
-                
-                return res.status(200).json({message: "Last opened file saved! ✨", user: thisObject});  
+                return res.status(200).json({message: "Last opened file saved! ✨", user: thisUser});  
 
             } catch (e) {
                 return res.status(500).json({message: e});            
