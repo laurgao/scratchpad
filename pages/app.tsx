@@ -29,6 +29,8 @@ import fetcher from "../utils/fetcher";
 import { useKey, waitForEl } from "../utils/key";
 import { DatedObj, FileObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
+const mainContainerHeight = "calc(100vh - 116px)"
+
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObj> }) {
     const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [error, setError] = useState<string>(null);
@@ -51,6 +53,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const currentFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId) : null
 
     useEffect(() => {if (selectedFileId && openSection) {
+        // document.getElementsByClassName("words-footer")[0].innerHTML = document.getElementsByClassName("words")[0].innerHTML
+        // document.getElementsByClassName("lines-footer")[0].innerHTML = document.getElementsByClassName("lines")[0].innerHTML
+        // document.getElementsByClassName("cursor-footer")[0].innerHTML = document.getElementsByClassName("cursor")[0].innerHTML
         setIsSaved(false);
         saveFile();
     }}, [sectionBody])
@@ -212,8 +217,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }
     
     return (
-        <Container className="flex pb-10 appContainer" width="full" padding={0}>
-            <SEO />
+        <>
+        <SEO />
+        <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
                     <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
@@ -226,8 +232,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 </div>
             </Modal>}
-            <div style={{height: "100px" /* this gets ignored, the child rnd can surpass it. */ }}> 
-            <Rnd default={{x: 0, y: 0, width: 200, height: "calc(100% - 275px)",}} minWidth={100} style={{position: "static", maxHeight: "300px" /* this also gets ignored */ }} className="border-gray-400 border-r-2 overflow-auto px-6" disableDragging={true} enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
+            <Rnd default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} minWidth={100} maxHeight={mainContainerHeight} style={{position: "static" }} className="border-gray-400 border-r-2 overflow-auto px-6" disableDragging={true} enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
                 <div className="text-xs text-gray-400 mb-6">
                     {isNewFolder ? (
                         <>
@@ -298,8 +303,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </Rnd>
-            </div>
-            <div className="flex-grow mx-10">
+            <div className="flex-grow mx-5 px-5 overflow-y-auto">
                 {error && (
                     <p className="text-red-500 mr-0">{error}</p>
                 )}
@@ -399,6 +403,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
 
         </Container>
+        {/* <Footer/> */}
+        </>
     );
 }
 

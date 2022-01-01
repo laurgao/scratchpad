@@ -1,6 +1,6 @@
 import {ReactNode} from "react";
 
-export default function Container({children, className, width = "4xl", padding = 4}: { children: ReactNode, className?: string, width?: "4xl" | "7xl" | "full", padding?: 0 | 4 | 6 | 8 }) {
+export default function Container({children, className, width = "4xl", padding = 4, style={}}: { children: ReactNode, className?: string, width?: "4xl" | "7xl" | "full", padding?: 0 | 4 | 6 | 8 , style?}) {
     return (
         <div
             className={"mx-auto " + ({
@@ -13,6 +13,7 @@ export default function Container({children, className, width = "4xl", padding =
                 "7xl": "max-w-7xl ",
                 "full": " "
             }[width]) + (className || "")}
+            style={style}
         >
             {children}
         </div>
