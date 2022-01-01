@@ -1,6 +1,6 @@
 import H3 from "./H3";
 
-const Input = ({name, value, setValue, type="text", id="", placeholder="", onChange, my=8, onKeyDown=null} : {
+const Input = ({name, value, setValue, type="text", id="", placeholder="", onChange, onKeyDown=null} : {
     name?: string,
     value: string,
     setValue?: any,
@@ -8,11 +8,10 @@ const Input = ({name, value, setValue, type="text", id="", placeholder="", onCha
     type?: "text"|"textarea"|"date",
     id?: string,
     placeholder?: string,
-    my?: number,
     onKeyDown?: (e) => any,
 }) => {
     return (
-        <div className={`my-${my}`}>
+        <div>
             {name && <H3>{name}</H3>}
             {(type == "text" || type == "date") && <input
                 type={type}

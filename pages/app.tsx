@@ -232,7 +232,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         setValue={setNewFileName}
                         type="text"
                         placeholder={`New ${!openFolderId ? "folder" : "file"}`}
-                        my={0}
                         id="new-file"
                     />
                 </>}
@@ -304,13 +303,15 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     {currentFile ? <H2>{currentFile.name}</H2> : <Skeleton height={30}/>}
                 </div>
                 {/* File sections */}
-                <div>
+                <div className="text-base text-gray-400">
                     {currentFile && <div className="flex flex-col">
                         {isCreateNewSection ? (
-                            <div>
+                            <div className="mb-4">
                                 <Input 
                                     value={newSectionName}
                                     setValue={setNewSectionName}
+                                    id="new-section"
+                                    placeholder="New section"
                                     onKeyDown={e => {
                                         if (e.key === "Enter") {
                                             console.log("Making new section!");
@@ -334,12 +335,17 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                             setIsCreateNewSection(false);
                                         } else if (e.key === "Escape") {
                                             setIsCreateNewSection(false);
+                                            setNewSectionName("");
                                         }
                                     }}
                                 />
+                                {!!newSectionName && <p className="text-xs">Enter to save<br/>Esc to exit</p>}
                             </div>
                         ) : (
-                            <Button onClick={() => setIsCreateNewSection(true)} className="ml-auto"><FaPlus size={10} className="text-gray-400"/></Button>
+                            <Button onClick={() => {
+                                setIsCreateNewSection(true);
+                                waitForEl("new-section");
+                            }} className="ml-auto"><FaPlus size={10}/></Button>
                         )}
                         <hr/>
                     </div>}
@@ -348,14 +354,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         <Accordion
                             label={
                                 <div 
-                                    className="flex p-2 text-gray-400 items-center" 
+                                    className="flex p-2 items-center" 
                                     style={{height: "30px"}}
                                     onClick={() => {
                                         setSectionBody(s.body || "")
                                         setOpenSection(s)
                                     }}
                                 >
-                                    <p className="text-base">{s.name}</p>
+                                    <p>{s.name}</p>
                                     <FaAngleLeft size={14} className="ml-auto"/>
                                 </div>
                             }                            
