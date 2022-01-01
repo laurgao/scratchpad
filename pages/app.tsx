@@ -5,8 +5,7 @@ import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import { useEffect, useState } from "react";
-import { ContextMenu, ContextMenuTrigger, MenuItem } from "react-contextmenu";
+import { useEffect, useState, useRef } from "react";
 import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
@@ -47,6 +46,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [isSaved, setIsSaved] = useState<boolean>(true);
     const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
     const [newSectionName, setNewSectionName] = useState<string>("");
+    const [toDeleteFileForRightClickList, setToDeleteFileForRightClickList] = useState<any[]>([null, null, null])
 
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
 
@@ -214,11 +214,45 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             setError(e);
             console.log(e);
         });
+    }   
+
+    
+
+    const RightClickMenu = ({file, x=0, y=0}) => {
+        const thisMenu = useRef<HTMLDivElement>(null);
+        useEffect(() => {
+            const moreButtonClickHandler = e => {
+                if (thisMenu.current !== null) {
+                    const isNotButton = e.target !== thisMenu.current && !(thisMenu.current.contains(e.target));
+                    if (isNotButton) {
+                        setToDeleteFileForRightClickList([null, null, null]);
+                    }
+                }
+            };
+    
+            window.addEventListener('click', moreButtonClickHandler);
+    
+            return function cleanup(){
+                window.removeEventListener("click", moreButtonClickHandler);
+            }
+        }, []);
+
+        return file ? (
+            <div ref={thisMenu} id={file._id} className="bg-white rounded-md shadow-lg z-10 fixed" style={{top: y, left: x}}>
+                <Button onClick={() => {
+                    setToDeleteItem(file);
+                    setToDeleteFileForRightClickList([null, null, null]);
+                }} className="flex hover:bg-gray-50 p-4 items-center">
+                    <FiTrash /><span className="ml-2">Delete</span>
+                </Button>
+            </div>
+        ) : <></>
     }
     
     return (
         <>
         <SEO />
+        {toDeleteFileForRightClickList && <RightClickMenu file={toDeleteFileForRightClickList[0]} x={toDeleteFileForRightClickList[1]} y={toDeleteFileForRightClickList[2]}/>}
         <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             {toDeleteItem && <Modal isOpen={toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
@@ -265,11 +299,16 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 </div>
                 {folders && folders.map(folder => 
                     <div key={folder._id} className="-mt-0.5">
-                        <ContextMenuTrigger id={folder._id}>
                         <Accordion 
                             className="text-base text-gray-400 mb-2" 
                             label={
-                                <div className={`flex items-center rounded-md border-2 pl-1 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}>
+                                <div 
+                                    className={`flex items-center rounded-md border-2 pl-1 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}
+                                    onContextMenu={(e) => {
+                                        e.preventDefault()
+                                        setToDeleteFileForRightClickList([folder, e.clientX, e.clientY])
+                                    }}
+                                >
                                     {openFolderId == folder._id ? <FaAngleDown className="text-gray-400"/> : <FaAngleRight className="text-gray-400"/>}
                                     <p className="ml-2">{folder.name}</p>
                                 </div>
@@ -280,26 +319,17 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         >
                             <div className="text-base text-gray-600 mb-6 ml-4 mt-2">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
-                                    <ContextMenuTrigger id={file._id}>
-                                        <p className={`cursor-pointer rounded-md border-2 pl-2 ${selectedFileId == file._id ? "border-blue-300" : "border-transparent"}`} onClick={() => {
+                                        <p className={`cursor-pointer rounded-md border-2 pl-2 ${selectedFileId == file._id ? "border-blue-300" : "border-transparent"}`} onContextMenu={(e) => {
+                                            e.preventDefault()
+                                            console.log(`lol u right clicked ${file.name} with mice coordinates`, e.clientX, e.clientY);
+                                            // return (<RightClickMenu file={file} x={e.clientX} y={e.clientY}/>)
+                                            setToDeleteFileForRightClickList([file, e.clientX, e.clientY])
+                                        }} onClick={() => {
                                             setSelectedFileId(file._id);
                                         }}>{file.name}</p>
-                                    </ContextMenuTrigger>                                           
-                        
-                                    <ContextMenu id={file._id} className="bg-white rounded-md shadow-lg z-10 cursor-pointer">
-                                        <MenuItem onClick={() => setToDeleteItem(file)} className="flex hover:bg-gray-50 p-4">
-                                            <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
-                                        </MenuItem>
-                                    </ContextMenu>
                                 </div>
                             )}</div>
                         </Accordion>
-                        </ContextMenuTrigger>
-                        <ContextMenu id={folder._id} className="bg-white rounded-md shadow-lg z-10 cursor-pointer">
-                            <MenuItem onClick={() => {setToDeleteItem(folder)}} className="flex hover:bg-gray-50 p-4">
-                                <FiTrash /><span className="ml-2 -mt-0.5">Delete</span>
-                            </MenuItem>
-                        </ContextMenu>
                     </div>
                 )}
             </Rnd>
@@ -363,6 +393,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     {currentFile && currentFile.sectionArr.map(s => 
                         <>
                         <Accordion
+                            key={`${s._id}-0`}
                             label={
                                 <div 
                                     className="flex p-2 items-center" 
@@ -391,7 +422,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                 className="text-lg"
                             />
                         </Accordion>                        
-                        <hr/>
+                        <hr key={`${s._id}-1`}/>
                         </>
                     )}
                 </div>
