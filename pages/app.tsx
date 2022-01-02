@@ -421,16 +421,20 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                 <div 
                                     className="flex p-2 items-center" 
                                     style={{height: "30px"}}
-                                    onClick={() => {
-                                        setSectionBody(s.body || "")
-                                        setOpenSection(s)
-                                    }}
                                 >
                                     <p>{s.name}</p>
                                     <FaAngleLeft size={14} className="ml-auto"/>
                                 </div>
                             }                            
-                            setOpenState={(event) => handleObjectOnClick(event, s, openSection && openSection._id == s._id)}
+                            setOpenState={(event) => {
+                                handleObjectOnClick(event, s, openSection && openSection._id == s._id)
+                                setSectionBody(s.body || "")
+                                setOpenSection(s)
+                                axios.post("/api/file", {id: openFileId, lastOpenSection: s._id}).then(res => {
+                                    console.log(res.data.message)
+                                    setIter(prevIter => prevIter + 1)
+                                }).catch(e => console.log(e))
+                            }}
                             openState={openSection && openSection._id == s._id}
                         >
                             <SimpleMDE
