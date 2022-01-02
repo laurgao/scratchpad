@@ -53,13 +53,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [newSectionName, setNewSectionName] = useState<string>("");
     const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
-    const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>([null, null, null]);
+    const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
 
     // Saving
     const [sectionBody, setSectionBody] = useState<string>("");
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
-    const [hoverCoords, setHoverCoords] = useState<number[]>([null, null]);
+    const [hoverCoords, setHoverCoords] = useState<number[]>(null);
 
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
@@ -225,7 +225,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 if (thisMenu.current !== null) {
                     const isNotButton = e.target !== thisMenu.current && !(thisMenu.current.contains(e.target));
                     if (isNotButton) {
-                        setToDeleteItemForRightClick([null, null, null]);
+                        setToDeleteItemForRightClick(null);
                     }
                 }
             };
@@ -252,20 +252,30 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     return (
         <>
         <SEO />
+
+        {!!hoverCoords && 
+            <div 
+                className="bg-white border border-gray-400 p-1 z-50 absolute text-xs text-gray-400"
+                style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1])}}
+            >(win) ctrl + /<br/>(mac) cmd + /</div>
+        }
+
         {toDeleteItemForRightClick && <RightClickMenu file={toDeleteItemForRightClick[0]} x={toDeleteItemForRightClick[1]} y={toDeleteItemForRightClick[2]}/>}
-        <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
-            {toDeleteItem && <Modal isOpen={!!toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
-                <div className="text-center">
-                    <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
-                    <div className="flex items-center justify-center gap-4 mt-6">
-                        <PrimaryButton 
-                            onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
-                            // isLoading={isLoading}
-                        >Delete</PrimaryButton>
-                        <Button onClick={() => setToDeleteItem(null)} className="font-semibold text-sm">Cancel</Button>
-                    </div>
+        
+        {toDeleteItem && <Modal isOpen={!!toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
+            <div className="text-center">
+                <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
+                <div className="flex items-center justify-center gap-4 mt-6">
+                    <PrimaryButton 
+                        onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
+                        // isLoading={isLoading}
+                    >Delete</PrimaryButton>
+                    <Button onClick={() => setToDeleteItem(null)} className="font-semibold text-sm">Cancel</Button>
                 </div>
-            </Modal>}
+            </div>
+        </Modal>}
+
+        <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             <Rnd 
                 default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} 
                 minWidth={100} 
@@ -297,20 +307,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         {!!newFileName && <p>Enter to save<br/>Esc to exit</p>}
                         </>
                     ) : (
-                        <>
                         <Button 
                             className="flex items-center"
                             onClick={onCreateNewFolder}
-                            onMouseLeave={(e) => setHoverCoords([null, null])}
-                            onMouseMove={e => setHoverCoords([e.clientX, e.clientY])}
+                            onMouseLeave={(e) => setHoverCoords(null)}
+                            onMouseMove={e => setHoverCoords([e.pageX, e.pageY])}
                         >
                             <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
                         </Button>
-                        {!!hoverCoords && <div 
-                            className="bg-white border border-gray-400 p-1 z-50 absolute"
-                            style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1] - 48)}}
-                        >(win) ctrl + /<br/>(mac) cmd + /</div>}
-                        </>
                     )}
                 </div>
                 {folders && folders.map(folder => 
@@ -322,7 +326,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     className={`flex items-center rounded-md px-2 py-1`}
                                     onContextMenu={(e) => {
                                         e.preventDefault()
-                                        setToDeleteItemForRightClick([folder, e.clientX, e.clientY])
+                                        setToDeleteItemForRightClick([folder, e.pageX, e.pageY])
                                     }}
                                 >
                                     {openFolderId == folder._id ? <FaAngleDown/> : <FaAngleRight/>}
@@ -339,7 +343,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                             className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
                                             onContextMenu={(e) => {
                                                 e.preventDefault()
-                                                setToDeleteItemForRightClick([file, e.clientX, e.clientY])
+                                                setToDeleteItemForRightClick([file, e.pageX, e.pageY])
                                             }} 
                                             onClick={() => {
                                                 setOpenFileId(file._id)

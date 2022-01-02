@@ -16,7 +16,7 @@ const Input = ({name, value, setValue, type="text", id="", placeholder="", onCha
             {name && <H3>{name}</H3>}
             {(type == "text" || type == "date") && <input
                 type={type}
-                className="border-b w-full content my-2 py-2"
+                className="border-b w-full content my-2 py-2 bg-transparent"
                 placeholder={placeholder}
                 value={value}
                 id={id}
@@ -24,7 +24,7 @@ const Input = ({name, value, setValue, type="text", id="", placeholder="", onCha
                 onKeyDown={onKeyDown}
             />}
             {type == "textarea" && <textarea
-                className="border-b w-full content my-2 py-2 text-gray-500"
+                className="border-b w-full content my-2 py-2 text-gray-500 bg-transparent"
                 rows={7}
                 placeholder={placeholder}
                 value={value}
