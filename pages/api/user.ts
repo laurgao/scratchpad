@@ -11,8 +11,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 await dbConnect();
                 
-                // return res.status(200).json({lastOpenedFile: req.body.lastOpenedFile, lastOpenedFileType: typeof(req.body.lastOpenedFile), f: req.body.f, ftype: typeof(req.body.f), req: cleanForJSON(req)})
-
                 // Sometimes you want to save that there is no last opened file.
                 if (typeof(req.body.lastOpenedFile) === "undefined") {
                     return res.status(406).json({message: "Missing req.body.lastOpenedFile"});            

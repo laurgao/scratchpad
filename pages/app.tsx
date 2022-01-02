@@ -26,41 +26,54 @@ import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
-import { DatedObj, FileObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
+import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
 const mainContainerHeight = "calc(100vh - 116px)"
 
-export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObj> }) {
-    const dateFileName = format(new Date(), "yyyy-MM-dd");
-    const [error, setError] = useState<string>(null);
+export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
+    // App lifecycle
     const [iter, setIter] = useState<number>(0);
+    const [error, setError] = useState<string>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [newFileName, setNewFileName] = useState<string>(dateFileName);
-    const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
-    const [sectionBody, setSectionBody] = useState<string>("");
-    const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
-    const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
-    const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
-    const [selectedFileId, setSelectedFileId] = useState<string>(props.user.lastOpenedFile || "");
-    const [toDeleteItem, setToDeleteItem] = useState<any>(null);
-    const [isSaved, setIsSaved] = useState<boolean>(true);
-    const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
-    const [newSectionName, setNewSectionName] = useState<string>("");
-    const [toDeleteFileForRightClickList, setToDeleteFileForRightClickList] = useState<any[]>([null, null, null])
 
+    // Data
     const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraph>[]}, any> = useSWR(`/api/folder?iter=${iter}`, fetcher);
+    const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
-    const currentFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === selectedFileId).length !== 0).fileArr.find(file => file._id === selectedFileId) : null
+    // Current opened items
+    const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
+    const [openFileId, setOpenFileId] = useState<string>(props.user.lastOpenedFile || "");
+    const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
+    const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) : null
 
-    useEffect(() => {if (selectedFileId && openSection) {
+    // Object creation/deletion
+    const dateFileName = format(new Date(), "yyyy-MM-dd");
+    const [newFileName, setNewFileName] = useState<string>(dateFileName);
+    const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
+    const [newSectionName, setNewSectionName] = useState<string>("");
+    const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
+    const [toDeleteItem, setToDeleteItem] = useState<any>(null);
+    const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>([null, null, null]);
+
+    // Saving
+    const [sectionBody, setSectionBody] = useState<string>("");
+    const [isSaved, setIsSaved] = useState<boolean>(true);
+
+    useEffect(() => {
+        let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
+        setOpenSection(firstOpenSection)
+        setSectionBody(firstOpenSection ? firstOpenSection.body : "")
+    }, [])
+
+    useEffect(() => {if (openFileId && openSection) {
         // document.getElementsByClassName("words-footer")[0].innerHTML = document.getElementsByClassName("words")[0].innerHTML
         // document.getElementsByClassName("lines-footer")[0].innerHTML = document.getElementsByClassName("lines")[0].innerHTML
         // document.getElementsByClassName("cursor-footer")[0].innerHTML = document.getElementsByClassName("cursor")[0].innerHTML
         setIsSaved(false);
         saveFile();
     }}, [sectionBody])
-    useEffect(() => {setIsSaved(true);}, [selectedFileId])
-    useEffect(() => {axios.post("/api/user", {lastOpenedFile: selectedFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [selectedFileId])
+    useEffect(() => {setIsSaved(true);}, [openFileId])
+    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [openFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
@@ -138,7 +151,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 console.log(res.data.message);
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
-                setSelectedFileId(res.data.id);
+                setOpenFileId(res.data.id);
                 setSectionBody("");
             }
         }).catch(e => {
@@ -193,7 +206,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             } else {
                 console.log(res.data.message);
                 setToDeleteItem(null);
-                if (type === "file" && selectedFileId === fileId) setSelectedFileId("");
+                if (type === "file" && openFileId === fileId) setOpenFileId("");
                 setIter(iter + 1);
             }
         }).catch(e => {
@@ -212,7 +225,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 if (thisMenu.current !== null) {
                     const isNotButton = e.target !== thisMenu.current && !(thisMenu.current.contains(e.target));
                     if (isNotButton) {
-                        setToDeleteFileForRightClickList([null, null, null]);
+                        setToDeleteItemForRightClick([null, null, null]);
                     }
                 }
             };
@@ -228,7 +241,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             <div ref={thisMenu} id={file._id} className="bg-white rounded-md shadow-lg z-10 fixed" style={{top: y, left: x}}>
                 <Button onClick={() => {
                     setToDeleteItem(file);
-                    setToDeleteFileForRightClickList([null, null, null]);
+                    setToDeleteItemForRightClick([null, null, null]);
                 }} className="flex hover:bg-gray-50 p-4 items-center">
                     <FiTrash /><span className="ml-2">Delete</span>
                 </Button>
@@ -239,7 +252,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     return (
         <>
         <SEO />
-        {toDeleteFileForRightClickList && <RightClickMenu file={toDeleteFileForRightClickList[0]} x={toDeleteFileForRightClickList[1]} y={toDeleteFileForRightClickList[2]}/>}
+        {toDeleteItemForRightClick && <RightClickMenu file={toDeleteItemForRightClick[0]} x={toDeleteItemForRightClick[1]} y={toDeleteItemForRightClick[2]}/>}
         <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             {toDeleteItem && <Modal isOpen={!!toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
@@ -253,7 +266,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 </div>
             </Modal>}
-            <Rnd default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} minWidth={100} maxHeight={mainContainerHeight} style={{position: "static" }} className="border-gray-400 border-r-2 overflow-auto px-6" disableDragging={true} enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
+            <Rnd 
+                default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} 
+                minWidth={100} 
+                maxHeight={mainContainerHeight} 
+                style={{position: "static" }} 
+                className="border-gray-400 border-r-2 overflow-auto px-6" 
+                disableDragging={true} 
+                enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
                 <div className="text-xs text-gray-400 mb-6">
                     {isNewFolder ? (
                         <>
@@ -302,7 +322,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     className={`flex items-center rounded-md border-2 pl-1 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}
                                     onContextMenu={(e) => {
                                         e.preventDefault()
-                                        setToDeleteFileForRightClickList([folder, e.clientX, e.clientY])
+                                        setToDeleteItemForRightClick([folder, e.clientX, e.clientY])
                                     }}
                                 >
                                     {openFolderId == folder._id ? <FaAngleDown/> : <FaAngleRight/>}
@@ -315,14 +335,21 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         >
                             <div className="text-base text-gray-600 mb-6 ml-4 mt-2">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
-                                        <p className={`cursor-pointer rounded-md border-2 pl-2 ${selectedFileId == file._id ? "border-blue-300" : "border-transparent"}`} onContextMenu={(e) => {
-                                            e.preventDefault()
-                                            console.log(`lol u right clicked ${file.name} with mice coordinates`, e.clientX, e.clientY);
-                                            // return (<RightClickMenu file={file} x={e.clientX} y={e.clientY}/>)
-                                            setToDeleteFileForRightClickList([file, e.clientX, e.clientY])
-                                        }} onClick={() => {
-                                            setSelectedFileId(file._id);
-                                        }}>{file.name}</p>
+                                        <p 
+                                            className={`cursor-pointer rounded-md border-2 pl-2 ${openFileId == file._id ? "border-blue-300" : "border-transparent"}`} 
+                                            onContextMenu={(e) => {
+                                                e.preventDefault()
+                                                console.log(`lol u right clicked ${file.name} with mice coordinates`, e.clientX, e.clientY);
+                                                // return (<RightClickMenu file={file} x={e.clientX} y={e.clientY}/>)
+                                                setToDeleteItemForRightClick([file, e.clientX, e.clientY])
+                                            }} 
+                                            onClick={() => {
+                                                setOpenFileId(file._id)
+                                                let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
+                                                setOpenSection(nextOpenSection)
+                                                setSectionBody(nextOpenSection ? nextOpenSection.body : "")
+                                            }}
+                                        >{file.name}</p>
                                 </div>
                             )}</div>
                         </Accordion>
@@ -333,15 +360,15 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 {error && (
                     <p className="text-red-500 mr-0">{error}</p>
                 )}
-                {selectedFileId ? 
+                {openFileId ? 
                 <>
                 {/* File title */}
                 <div className="mb-4">
-                    {currentFile ? <H2>{currentFile.name}</H2> : <Skeleton height={30}/>}
+                    {openFile ? <H2>{openFile.name}</H2> : <Skeleton height={30}/>}
                 </div>
                 {/* File sections */}
                 <div className="text-base text-gray-400">
-                    {currentFile && <div className="flex flex-col">
+                    {openFile && <div className="flex flex-col">
                         {isCreateNewSection ? (
                             <div className="mb-4">
                                 <Input 
@@ -353,7 +380,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                         if (e.key === "Enter") {
                                             console.log("Making new section!");
                                             axios.post("/api/section", {
-                                                file: currentFile._id,
+                                                file: openFile._id,
                                                 name: newSectionName,
                                             }).then(res => {
                                                 if (res.data.error) {
@@ -386,7 +413,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         )}
                         <hr/>
                     </div>}
-                    {currentFile && currentFile.sectionArr.map(s => 
+                    {openFile && openFile.sectionArr.map(s => 
                         <>
                         <Accordion
                             key={`${s._id}-0`}
@@ -423,7 +450,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     )}
                 </div>
 
-                {/* <div className="text-xs opacity-30 mt-4">{isSaved ? <p>Saved</p> : <p>Saving...</p>}</div> */}
                 </> : <div className="flex items-center justify-center text-center h-1/2">
                     <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                 </div>}
@@ -445,8 +471,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         const thisUser = await UserModel.findOne({email: session.user.email});
         if (!thisUser) return {redirect: {permanent: false, destination: "/"}};
         let lastOpenedFile = {};
-        if (thisUser.lastOpenedFile) lastOpenedFile = await FileModel.findOne({_id: thisUser.lastOpenedFile})
-        return {props: {user: cleanForJSON(thisUser), lastOpenedFile: cleanForJSON(lastOpenedFile)}}
+        if (thisUser.lastOpenedFile) {
+            lastOpenedFile = await FileModel.aggregate([
+                {$match: {_id: thisUser.lastOpenedFile}},
+                {
+                    $lookup: {
+                        from: "sections",
+                        localField: "_id", // File field
+                        foreignField: "file", //  Section field
+                        as: "sectionArr",
+                    }
+                },
+            ])
+        }
+        return {props: {user: cleanForJSON(thisUser), lastOpenedFile: cleanForJSON(lastOpenedFile[0])}}
     } catch (e) {
         console.log(e);
         return {notFound: true};

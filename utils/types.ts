@@ -8,6 +8,7 @@ export interface UserObj {
 export interface FileObj {
     name: string; 
     folder: string; 
+    lastOpenSection: string;
 }
 
 export interface SectionObj {
