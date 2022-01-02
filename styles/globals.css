@@ -43,7 +43,7 @@ SCROLLBAR
   
   /* Track */
   ::-webkit-scrollbar-track {
-    box-shadow: inset 0 0 5px rgb(219 234 254); /* tailwind blue 50 */
+    background: rgb(219 234 254); /* tailwind blue 100 */
     border-radius: 10px;
   }
    
