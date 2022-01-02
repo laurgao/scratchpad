@@ -282,7 +282,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 minWidth={100} 
                 maxHeight={mainContainerHeight} 
                 style={{position: "static" }} 
-                className="overflow-auto px-6 bg-gray-100" 
+                className="overflow-auto px-6 bg-gray-100 pb-4" 
                 disableDragging={true} 
                 enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
                 <div className="text-xs text-gray-400 my-4">
