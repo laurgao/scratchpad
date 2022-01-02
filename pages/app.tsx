@@ -82,6 +82,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     function onCreateNewFolder() {
         if (!openFolderId) setNewFileName("");
         else setNewFileName(dateFileName);
+        setHoverCoords(null);
         setIsNewFolder(true);
         waitForEl("new-file");
     }

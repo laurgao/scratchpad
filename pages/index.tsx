@@ -17,17 +17,22 @@ export default function Home(props: {loggedIn: boolean}) {
         <>
         <SEO />
         <div className="bg-blue-300 absolute left-0 w-full" style={{height: "40vh", top: "70vh", zIndex: -10, transform: "skew(0deg, -5deg)",}}/>
-        <Container>
-            <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
+        <Container className="mt-40 flex justify-center text-center flex-col mb-4">
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
             <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
-            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <PrimaryButton href="/app">Visit dashboard</PrimaryButton> : <SignInButton />}</div>
-            <img src="/hero.png"/>
-            </div>
+            <div className="flex justify-center w-full my-10">{props.loggedIn ? <PrimaryButton href="/app">Visit dashboard</PrimaryButton> : <SignInButton />}</div>
+            <img src="/hero.png" className="mb-24"/>
+            
+            <footer className="text-sm text-gray-400">
+                <A href="https://github.com/laurgao/scratchpad">Source code</A> on Github
+            </footer>
         </Container>
         </>
     );
 }
+
+// Props can be anything in React.HTMLProps<HTMLAnchorElement> except for className, which will be overwritten
+export const A = (props: React.HTMLProps<HTMLAnchorElement>) => <a {...props} className="underline hover:text-blue-400 transition"/>
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await getSession(context);
