@@ -1,3 +1,5 @@
+// Source: https://postulate.us/@samsonzhang/p/2021-03-06-Making-Mongodb-Schema-Changes-with-kL4J3vYUhY9V6SK16TisC7
+
 require("dotenv").config();
 
 const config = {

@@ -1,15 +1,16 @@
+import { format } from "date-fns";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import SignInButton from "../components/SignInButton";
-import { UserModel } from "../models/User";
-import { FolderModel } from "../models/Folder";
-import { FileModel } from "../models/File";
-import dbConnect from "../utils/dbConnect";
-import { format } from "date-fns";
 import Button from "../components/Button";
+import Container from "../components/Container";
 import H2 from "../components/H2";
 import SEO from "../components/SEO";
-import Container from "../components/Container";
+import SignInButton from "../components/SignInButton";
+import { FileModel } from "../models/File";
+import { FolderModel } from "../models/Folder";
+import { SectionModel } from "../models/Section";
+import { UserModel } from "../models/User";
+import dbConnect from "../utils/dbConnect";
 
 export default function Home(props: {loggedIn: boolean}) {
     return (
@@ -56,6 +57,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
             newUser.lastOpenedFile = newFile._id
             await newUser.save();
+
+            const newSection = await SectionModel.create({
+                file: newFile._id,
+            })
+
+            newFile.lastOpenSection = newSection._id
+            await newFile.save()
         }
 
         return {redirect: {permanent: false, destination: "/app"}};
