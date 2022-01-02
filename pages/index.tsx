@@ -1,26 +1,27 @@
+import { format } from "date-fns";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import SignInButton from "../components/SignInButton";
-import { UserModel } from "../models/User";
-import { FolderModel } from "../models/Folder";
-import { FileModel } from "../models/File";
-import dbConnect from "../utils/dbConnect";
-import { format } from "date-fns";
-import Button from "../components/Button";
-import H2 from "../components/H2";
-import SEO from "../components/SEO";
 import Container from "../components/Container";
+import H2 from "../components/H2";
+import PrimaryButton from "../components/PrimaryButton";
+import SEO from "../components/SEO";
+import SignInButton from "../components/SignInButton";
+import { FileModel } from "../models/File";
+import { FolderModel } from "../models/Folder";
+import { SectionModel } from "../models/Section";
+import { UserModel } from "../models/User";
+import dbConnect from "../utils/dbConnect";
 
 export default function Home(props: {loggedIn: boolean}) {
     return (
         <>
         <SEO />
-        <div style={{backgroundColor: "rgb(147, 197, 253)", position: "absolute", height: "40vh", width: "100%", top: "70vh",  left: 0, zIndex: -10, transform: "skew(0deg, -5deg)",} /* tailwind blue 300 */ }/>
+        <div className="bg-blue-300 absolute left-0 w-full" style={{height: "40vh", top: "70vh", zIndex: -10, transform: "skew(0deg, -5deg)",}}/>
         <Container>
             <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
             <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
-            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <Button href="/app">Visit dashboard</Button> : <SignInButton />}</div>
+            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <PrimaryButton href="/app">Visit dashboard</PrimaryButton> : <SignInButton />}</div>
             <img src="/hero.png"/>
             </div>
         </Container>
@@ -56,6 +57,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
             newUser.lastOpenedFile = newFile._id
             await newUser.save();
+
+            const newSection = await SectionModel.create({
+                file: newFile._id,
+            })
+
+            newFile.lastOpenSection = newSection._id
+            await newFile.save()
         }
 
         return {redirect: {permanent: false, destination: "/app"}};

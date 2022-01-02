@@ -21,7 +21,7 @@ export function useKey(key, cb) {
     }, [key])
 }
 
-export function waitForEl(selector) {
+export function waitForEl(selector: string) {
     const input = document.getElementById(selector);
     if (input) {
         input.focus();

@@ -4,9 +4,9 @@ import { FileObj } from "../utils/types";
 interface FileDoc extends FileObj, Document {}
 
 const FileSchema = new mongoose.Schema({
-	body: { required: false, type: String }, 
 	name: { required: true, type: String }, 
 	folder: { required: true, type: mongoose.Schema.Types.ObjectId }, 
+	lastOpenSection: {required: false, type: mongoose.Schema.Types.ObjectId }
 }, {
 	timestamps: true,
 });

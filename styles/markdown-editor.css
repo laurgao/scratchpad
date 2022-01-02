@@ -14,6 +14,7 @@
     padding-top: 2rem;
     padding-left: 0;
     padding-right: 0;
+    background-color: inherit;
 }
 
 .EasyMDEContainer div.editor-statusbar {
@@ -22,7 +23,7 @@
     bottom: 0;
     right: 0;
     width: 100vw;
-    background-color: rgb(249, 250, 251); /* Tailwind gray 100 */
-    color: rgb(156, 163, 175); /* Tailwind gray 400 */
+    color: #94a3b8; /* slate 400 */
+    background-color: #f1f5f9; /* slate 100 */
     border-top: 1px solid rgb(156, 163, 175);
 }

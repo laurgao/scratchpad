@@ -6,9 +6,15 @@ export interface UserObj {
 }
 
 export interface FileObj {
-    body?: string; 
     name: string; 
     folder: string; 
+    lastOpenSection: string;
+}
+
+export interface SectionObj {
+    body?: string; 
+    name?: string; 
+    file: string; 
 }
 
 export interface FolderObj {
@@ -16,8 +22,12 @@ export interface FolderObj {
     name: string; 
 }
 
+export interface FileObjGraph extends FileObj {
+    sectionArr: DatedObj<SectionObj>[],
+}
+
 export interface FolderObjGraph extends FolderObj {
-    fileArr: DatedObj<FileObj>[],
+    fileArr: DatedObj<FileObjGraph>[],
 }
 
 export interface SessionObj {

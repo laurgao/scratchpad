@@ -19,8 +19,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     {$match: {user: thisUser._id}},
                     {$lookup: {
                         from: "files",
-                        localField: "_id",
-                        foreignField: "folder",
+                        // localField: "_id",
+                        // foreignField: "folder",
+                        let: {"folder": "$_id"}, // Local field (folder field)
+                        pipeline: [
+                            {$match: {$expr: {$and: [{$eq: ["$folder", "$$folder"]}, ]}}},
+                            {
+                                $lookup: {
+                                    from: "sections",
+                                    localField: "_id", // File field
+                                    foreignField: "file", //  Section field
+                                    as: "sectionArr",
+                                }
+                            },
+                        ],
                         as: "fileArr",
                     }}
                 ]);
