@@ -470,7 +470,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         await dbConnect();
         const thisUser = await UserModel.findOne({email: session.user.email});
         if (!thisUser) return {redirect: {permanent: false, destination: "/"}};
-        let lastOpenedFile = {};
+        let lastOpenedFile = [{}];
         if (thisUser.lastOpenedFile) {
             lastOpenedFile = await FileModel.aggregate([
                 {$match: {_id: thisUser.lastOpenedFile}},
