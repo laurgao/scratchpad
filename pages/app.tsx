@@ -6,7 +6,6 @@ import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
-import ReactHover, { Hover, Trigger } from "react-hover";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
@@ -19,6 +18,7 @@ import Container from "../components/Container";
 import H2 from "../components/H2";
 import Input from "../components/Input";
 import Modal from "../components/Modal";
+import PrimaryButton from "../components/PrimaryButton";
 import SEO from "../components/SEO";
 import { FileModel } from "../models/File";
 import { UserModel } from "../models/User";
@@ -28,7 +28,7 @@ import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
 import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
-const mainContainerHeight = "calc(100vh - 116px)"
+const mainContainerHeight = "calc(100vh - 97px)"
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
     // App lifecycle
@@ -59,6 +59,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [sectionBody, setSectionBody] = useState<string>("");
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
+    const [hoverCoords, setHoverCoords] = useState<number[]>([null, null]);
+
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
         setOpenSection(firstOpenSection)
@@ -66,9 +68,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }, [])
 
     useEffect(() => {if (openFileId && openSection) {
-        // document.getElementsByClassName("words-footer")[0].innerHTML = document.getElementsByClassName("words")[0].innerHTML
-        // document.getElementsByClassName("lines-footer")[0].innerHTML = document.getElementsByClassName("lines")[0].innerHTML
-        // document.getElementsByClassName("cursor-footer")[0].innerHTML = document.getElementsByClassName("cursor")[0].innerHTML
         setIsSaved(false);
         saveFile();
     }}, [sectionBody])
@@ -258,12 +257,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             {toDeleteItem && <Modal isOpen={!!toDeleteItem} onRequestClose={() => setToDeleteItem(null)} small={true}>
                 <div className="text-center">
                     <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
-                    <div className="flex items-center justify-center gap-4 mt-2">
-                        <Button 
+                    <div className="flex items-center justify-center gap-4 mt-6">
+                        <PrimaryButton 
                             onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
                             // isLoading={isLoading}
-                        >Delete</Button>
-                        <Button onClick={() => setToDeleteItem(null)}>Cancel</Button>
+                        >Delete</PrimaryButton>
+                        <Button onClick={() => setToDeleteItem(null)} className="font-semibold text-sm">Cancel</Button>
                     </div>
                 </div>
             </Modal>}
@@ -272,10 +271,10 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 minWidth={100} 
                 maxHeight={mainContainerHeight} 
                 style={{position: "static" }} 
-                className="border-gray-400 border-r-2 overflow-auto px-6" 
+                className="overflow-auto px-6 bg-gray-100" 
                 disableDragging={true} 
                 enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
-                <div className="text-xs text-gray-400 mb-6">
+                <div className="text-xs text-gray-400 my-4">
                     {isNewFolder ? (
                         <>
                         <Input 
@@ -298,29 +297,29 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         {!!newFileName && <p>Enter to save<br/>Esc to exit</p>}
                         </>
                     ) : (
-                        <ReactHover options={{
-                            followCursor: true,
-                            shiftX: 20,
-                            shiftY: -70,
-                        }}>
-                            <Trigger type="trigger">
-                                <Button onClick={onCreateNewFolder} className="flex items-center w-full">
-                                    <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
-                                </Button>
-                            </Trigger>
-                            <Hover type="hover">
-                                <div className="transition bg-white border border-gray-400 p-1 z-50">(win) ctrl + /<br/>(mac) cmd + /</div>
-                            </Hover>
-                        </ReactHover>
+                        <>
+                        <Button 
+                            className="flex items-center"
+                            onClick={onCreateNewFolder}
+                            onMouseLeave={(e) => setHoverCoords([null, null])}
+                            onMouseMove={e => setHoverCoords([e.clientX, e.clientY])}
+                        >
+                            <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
+                        </Button>
+                        {!!hoverCoords && <div 
+                            className="bg-white border border-gray-400 p-1 z-50 absolute"
+                            style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1] - 48)}}
+                        >(win) ctrl + /<br/>(mac) cmd + /</div>}
+                        </>
                     )}
                 </div>
                 {folders && folders.map(folder => 
                     <div key={folder._id} className="-mt-0.5">
                         <Accordion 
-                            className="text-base text-gray-400 mb-2" 
+                            className="text-base text-gray-500 mb-1" 
                             label={
                                 <div 
-                                    className={`flex items-center rounded-md border-2 pl-1 ${openFolderId == folder._id ? "border-blue-300" : "border-transparent"}`}
+                                    className={`flex items-center rounded-md px-2 py-1`}
                                     onContextMenu={(e) => {
                                         e.preventDefault()
                                         setToDeleteItemForRightClick([folder, e.clientX, e.clientY])
@@ -334,14 +333,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
                             openState={openFolderId == folder._id}
                         >
-                            <div className="text-base text-gray-600 mb-6 ml-4 mt-2">{folder.fileArr && folder.fileArr.map(file => 
+                            <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
                                         <p 
-                                            className={`cursor-pointer rounded-md border-2 pl-2 ${openFileId == file._id ? "border-blue-300" : "border-transparent"}`} 
+                                            className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
                                             onContextMenu={(e) => {
                                                 e.preventDefault()
-                                                console.log(`lol u right clicked ${file.name} with mice coordinates`, e.clientX, e.clientY);
-                                                // return (<RightClickMenu file={file} x={e.clientX} y={e.clientY}/>)
                                                 setToDeleteItemForRightClick([file, e.clientX, e.clientY])
                                             }} 
                                             onClick={() => {
@@ -357,9 +354,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </Rnd>
-            <div className="flex-grow mx-5 px-5 overflow-y-auto">
+            <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
-                    <p className="text-red-500 mr-0">{error}</p>
+                    <p className="text-red-500 font-bold text-center mb-8">{error}</p>
                 )}
                 {openFileId ? 
                 <>
@@ -460,7 +457,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
 
         </Container>
-        {/* <Footer/> */}
         </>
     );
 }

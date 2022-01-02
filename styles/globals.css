@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 body {
-    @apply font-mono
+    @apply font-mono bg-gray-50
 }
 
 .up-spinner {
@@ -39,21 +39,25 @@ SCROLLBAR
 /* width */
 ::-webkit-scrollbar {
     width: 12px;
+    height: 12px;
   }
   
   /* Track */
   ::-webkit-scrollbar-track {
-    background: rgb(219 234 254); /* tailwind blue 100 */
+    background: rgb(191, 219, 254); 
+    /* @apply bg-blue-200 */
     border-radius: 10px;
   }
    
   /* Handle */
   ::-webkit-scrollbar-thumb {
-    background: rgb(147 197 253); /* tailwind blue 300 */ 
+    background: rgb(96, 165, 250); 
+    /* @apply bg-blue-400 */
     border-radius: 10px;
   }
   
   /* Handle on hover */
   ::-webkit-scrollbar-thumb:active {
-    background: rgb(96 165 250);; /* tailwind blue 400 */
+    background: rgb(59, 130, 246);
+    /* @apply bg-blue-500 */
   }

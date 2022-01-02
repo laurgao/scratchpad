@@ -1,9 +1,9 @@
 import { format } from "date-fns";
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
-import Button from "../components/Button";
 import Container from "../components/Container";
 import H2 from "../components/H2";
+import PrimaryButton from "../components/PrimaryButton";
 import SEO from "../components/SEO";
 import SignInButton from "../components/SignInButton";
 import { FileModel } from "../models/File";
@@ -21,7 +21,7 @@ export default function Home(props: {loggedIn: boolean}) {
             <div className="flex justify-center text-center" style={{marginTop: 160, marginBottom: 80, flexDirection: "column"}}>
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
             <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
-            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <Button href="/app">Visit dashboard</Button> : <SignInButton />}</div>
+            <div className="flex justify-center w-full" style={{marginTop: 40, marginBottom: 40}}>{props.loggedIn ? <PrimaryButton href="/app">Visit dashboard</PrimaryButton> : <SignInButton />}</div>
             <img src="/hero.png"/>
             </div>
         </Container>
