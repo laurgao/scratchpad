@@ -108,11 +108,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             setOpenFolderId(folderId);
         }
     }
-    const handleObjectOnClick = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
+    const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
         if (currentIsOpen) {
             setOpenSection(null);
         } else {
             setOpenSection(object);
+            setSectionBody(object.body || "")
         }
     }
     function createNewFolder() {
@@ -418,19 +419,18 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         <Accordion
                             key={`${s._id}-0`}
                             label={
-                                <div 
-                                    className="flex p-2 items-center" 
-                                    style={{height: "30px"}}
-                                >
+                                <div className="flex p-2 items-center" style={{height: "30px"}}>
                                     <p>{s.name}</p>
                                     <FaAngleLeft size={14} className="ml-auto"/>
                                 </div>
                             }                            
                             setOpenState={(event) => {
-                                handleObjectOnClick(event, s, openSection && openSection._id == s._id)
-                                setSectionBody(s.body || "")
-                                setOpenSection(s)
-                                axios.post("/api/file", {id: openFileId, lastOpenSection: s._id}).then(res => {
+                                const isClickingOnOpenAccordion = !!openSection && openSection._id == s._id
+                                handleSectionOnClickAccordion(event, s, isClickingOnOpenAccordion)
+                                axios.post("/api/file", {
+                                    id: openFileId, 
+                                    lastOpenSection: isClickingOnOpenAccordion ? "null" : s._id
+                                }).then(res => {
                                     console.log(res.data.message)
                                     setIter(prevIter => prevIter + 1)
                                 }).catch(e => console.log(e))

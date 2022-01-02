@@ -21,7 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     if (req.body.name) thisObject.name = req.body.name;
                     if (req.body.folder) thisObject.folder = req.body.folder;
-                    if (req.body.lastOpenSection) thisObject.lastOpenSection = req.body.lastOpenSection
+                    if (req.body.lastOpenSection) {
+                        if (req.body.lastOpenSection === "null") thisObject.lastOpenSection = null
+                        else thisObject.lastOpenSection = req.body.lastOpenSection
+                    }
                     
                     await thisObject.save();
                     
