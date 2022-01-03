@@ -1,9 +1,9 @@
 module.exports = {
     purge: {
         enabled: true,
-           layers: ["components", "utilities"],
-           content: ["./**/*.tsx", "./**/*.html"],
-          },
+        content: ["./**/*.tsx", "./**/*.html"],
+        // ** matches any number of directories from ./components to /*.tsx
+    },
     theme: {
         container: {
             center: true,
