@@ -1,8 +1,9 @@
 module.exports = {
-    purge: [
-        './**/*.html',
-        './**/*.tsx',
-    ],
+    purge: {
+        enabled: true,
+           layers: ["components", "utilities"],
+           content: ["./pages/**/*.tsx", "./components/**/*.tsx", "./**/*.html"],
+          },
     theme: {
         container: {
             center: true,
