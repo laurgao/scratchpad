@@ -7,9 +7,9 @@ const Error = ({statusCode}) => {
         <Container className="flex items-center justify-center text-center" style={{height: "calc(100vh - 98px)"}}>
             <div>
                 <div className="flex items-center justify-center mb-10">
-                    <div className="border-r border-black pr-4 mr-4 h-20 flex items-center">
+                {statusCode && <div className="border-r border-black pr-4 mr-4 h-20 flex items-center">
                         <H2 className="">{statusCode}</H2>
-                    </div>
+                    </div>}
                     <p>
                         {statusCode
                             ? `A server-side error occurred.`

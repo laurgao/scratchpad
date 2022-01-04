@@ -61,6 +61,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
 
+    const [fileDownloadUrl, setFileDownloadUrl] = useState<string>("")
+
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
         setOpenSection(firstOpenSection)
@@ -276,13 +278,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
         </Modal>}
 
-        <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
+        <Container className="flex overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             <Rnd 
                 default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} 
                 minWidth={100} 
                 maxHeight={mainContainerHeight} 
                 style={{position: "static" }} 
-                className="overflow-auto px-6 bg-gray-100 pb-4" 
+                className="overflow-auto px-6 pb-6 bg-gray-100" 
                 disableDragging={true} 
                 enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
                 <div className="text-xs text-gray-400 my-4">
@@ -358,6 +360,43 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </Accordion>
                     </div>
                 )}
+                {fileDownloadUrl && <a 
+                    // style={{display: "none"}}
+                    id="thisDownloadAnchor"
+                    download={(openFile ? openFile.name : "f") + ".md"}
+                    href={fileDownloadUrl}
+                >download it</a>}
+                <PrimaryButton onClick={() => {
+                    try {
+                        let markdownTextOfCombinedSections = "";
+                        for (let section of openFile.sectionArr) {
+                            markdownTextOfCombinedSections += "# " + (section.name || "")
+                            markdownTextOfCombinedSections += `
+---
+
+`
+                            markdownTextOfCombinedSections += section.body || ""
+                            markdownTextOfCombinedSections += `
+
+
+`
+                        }
+
+                        // Download it
+                        const blob = new Blob([markdownTextOfCombinedSections]);
+                        const blobFileDownloadUrl = URL.createObjectURL(blob);  
+                        setFileDownloadUrl(blobFileDownloadUrl)
+                        // waitForElClick("thisDownloadAnchor", () => {
+                        //     URL.revokeObjectURL(fileDownloadUrl);  // free up storage--no longer needed.
+                        //     setFileDownloadUrl("")
+                        // })
+
+                    } catch(e) {
+                        console.log(e)
+                        setError(e)
+                    }
+
+                }}>Export files</PrimaryButton>
             </Rnd>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
