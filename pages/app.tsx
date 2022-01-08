@@ -292,7 +292,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             value={newFileName}
                             setValue={setNewFileName}
                             type="text"
-                            placeholder={`New ${!openFolderId ? "folder" : "file"}`}
+                            placeholder={`${!openFolderId ? "Folder" : "File"} name`}
                             id="new-file"
                             className="text-base text-black"
                             onKeyDown={e => {
@@ -378,7 +378,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     value={newSectionName}
                                     setValue={setNewSectionName}
                                     id="new-section"
-                                    placeholder="New section"
+                                    placeholder="New section name"
                                     onKeyDown={e => {
                                         if (e.key === "Enter") {
                                             console.log("Making new section!");
