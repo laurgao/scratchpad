@@ -206,8 +206,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIsLoading(false);
             } else {
                 console.log(res.data.message);
-                setToDeleteItem(null);
                 if (type === "file" && openFileId === fileId) setOpenFileId("");
+                if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
+                    setOpenFileId("")
+                }
+                setToDeleteItem(null);
                 setIter(iter + 1);
             }
         }).catch(e => {
@@ -363,7 +366,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 {error && (
                     <p className="text-red-500 font-bold text-center mb-8">{error}</p>
                 )}
-                {openFileId ? 
+                {(openFileId) ? 
                 <>
                 {/* File title */}
                 <div className="mb-4">
@@ -475,9 +478,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         await dbConnect();
         const thisUser = await UserModel.findOne({email: session.user.email});
         if (!thisUser) return {redirect: {permanent: false, destination: "/"}};
-        let lastOpenedFile = [{}];
+        let lastOpenedFile = {};
         if (thisUser.lastOpenedFile) {
-            lastOpenedFile = await FileModel.aggregate([
+            const lastOpenedFileArr = await FileModel.aggregate([
                 {$match: {_id: thisUser.lastOpenedFile}},
                 {
                     $lookup: {
@@ -488,8 +491,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
                     }
                 },
             ])
+            if (lastOpenedFileArr.length) lastOpenedFile = lastOpenedFileArr[0]
         }
-        return {props: {user: cleanForJSON(thisUser), lastOpenedFile: cleanForJSON(lastOpenedFile[0])}}
+        return {props: {user: cleanForJSON(thisUser), lastOpenedFile: cleanForJSON(lastOpenedFile)}}
     } catch (e) {
         console.log(e);
         return {notFound: true};
