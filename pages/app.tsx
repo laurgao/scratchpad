@@ -28,7 +28,7 @@ import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
 import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 
-const mainContainerHeight = "calc(100vh - 97px)"
+const AUTOSAVE_INTERVAL = 1000
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
     // App lifecycle
@@ -41,8 +41,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
     // Current opened items
-    const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
-    const [openFileId, setOpenFileId] = useState<string>(props.user.lastOpenedFile || "");
+    // const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
+    const [openSectionId, setOpenSectionId] = useState<string>(null);
+    const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
     const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) : null
 
@@ -61,16 +62,28 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
 
+    const mainContainerHeight = openSectionId ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
+
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
-        setOpenSection(firstOpenSection)
+        // setOpenSection(firstOpenSection)
+        setOpenSectionId(firstOpenSection._id)
         setSectionBody(firstOpenSection ? firstOpenSection.body : "")
     }, [])
 
-    useEffect(() => {if (openFileId && openSection) {
+    useEffect(() => {if (openFileId && openSectionId) {
         setIsSaved(false);
-        saveFile();
-    }}, [sectionBody])
+    }}, [sectionBody])  
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (openSectionId && !isSaved) saveFile(openSectionId, sectionBody)
+            
+        }, AUTOSAVE_INTERVAL);
+
+        return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
+    }, [sectionBody, isSaved])
+
     useEffect(() => {setIsSaved(true);}, [openFileId])
     useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [openFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
@@ -110,9 +123,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }
     const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
         if (currentIsOpen) {
-            setOpenSection(null);
+            setOpenSectionId(null);
         } else {
-            setOpenSection(object);
+            setOpenSectionId(object._id);
             setSectionBody(object.body || "")
         }
     }
@@ -162,12 +175,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         });
     }
 
-    function saveFile() {
-        setIsLoading(true);
+    function saveFile(id, value) {
+        console.log("saving...")
 
         axios.post("/api/section", {
-            id: openSection._id,
-            body: sectionBody,
+            id: id,
+            body: value,
         }).then(res => {
             if (res.data.error) {
                 setError(res.data.error);
@@ -178,7 +191,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIter(iter + 1);
             }
         }).catch(e => {
-            setIsLoading(false);
             setError(e);
             console.log(e);
         });
@@ -343,19 +355,19 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         >
                             <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">{folder.fileArr && folder.fileArr.map(file => 
                                 <div key={file._id}>
-                                        <p 
-                                            className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
-                                            onContextMenu={(e) => {
-                                                e.preventDefault()
-                                                setToDeleteItemForRightClick([file, e.pageX, e.pageY])
-                                            }} 
-                                            onClick={() => {
-                                                setOpenFileId(file._id)
-                                                let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
-                                                setOpenSection(nextOpenSection)
-                                                setSectionBody(nextOpenSection ? nextOpenSection.body : "")
-                                            }}
-                                        >{file.name}</p>
+                                    <p 
+                                        className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
+                                        onContextMenu={(e) => {
+                                            e.preventDefault()
+                                            setToDeleteItemForRightClick([file, e.pageX, e.pageY])
+                                        }} 
+                                        onClick={() => {
+                                            setOpenFileId(file._id)
+                                            let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
+                                            setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
+                                            setSectionBody(nextOpenSection ? nextOpenSection.body : "")
+                                        }}
+                                    >{file.name}</p>
                                 </div>
                             )}</div>
                         </Accordion>
@@ -430,7 +442,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                 </div>
                             }                            
                             setOpenState={(event) => {
-                                const isClickingOnOpenAccordion = !!openSection && openSection._id == s._id
+                                const isClickingOnOpenAccordion = openSectionId == s._id
                                 handleSectionOnClickAccordion(event, s, isClickingOnOpenAccordion)
                                 axios.post("/api/file", {
                                     id: openFileId, 
@@ -440,7 +452,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     setIter(prevIter => prevIter + 1)
                                 }).catch(e => console.log(e))
                             }}
-                            openState={openSection && openSection._id == s._id}
+                            openState={openSectionId == s._id}
                         >
                             <SimpleMDE
                                 id={`hellosection-${s._id}`}
