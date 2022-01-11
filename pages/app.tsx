@@ -142,10 +142,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         axios.post("/api/folder", {
             name: newFileName,
         }).then(res => {
-            if (res.data.error) {
-                setError(res.data.error);
-                setIsLoading(false);
-            } else {
+            if (res.data.error) handleError(res.data.error)
+            else {
                 console.log(res.data.message);
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
@@ -160,10 +158,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             name: newFileName,
             folder: openFolderId,
         }).then(res => {
-            if (res.data.error) {
-                setError(res.data.error);
-                setIsLoading(false);
-            } else {
+            if (res.data.error) handleError(res.data.error);
+            else {
                 console.log(res.data.message);
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
@@ -181,10 +177,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             id: id,
             body: value,
         }).then(res => {
-            if (res.data.error) {
-                setError(res.data.error);
-                setIsLoading(false);
-            } else {
+            if (res.data.error) handleError(res.data.error);
+            else {
                 console.log(res.data.message);
                 setIsSaved(true);
                 setIter(iter + 1);
@@ -209,10 +203,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 id: fileId,
             },
         }).then(res => {
-            if (res.data.error) {
-                setError(res.data.error);
-                setIsLoading(false);
-            } else {
+            if (res.data.error) handleError(res.data.error);
+            else {
                 console.log(res.data.message);
                 if (type === "file" && openFileId === fileId) setOpenFileId("");
                 if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
@@ -393,10 +385,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                                 file: openFile._id,
                                                 name: newSectionName,
                                             }).then(res => {
-                                                if (res.data.error) {
-                                                    setError(res.data.error);
-                                                    setIsLoading(false);
-                                                } else {
+                                                if (res.data.error) handleError(res.data.error);
+                                                else {
                                                     console.log(res.data.message);
                                                     setIter(iter + 1);
                                                     setOpenSectionId(res.data.id);
