@@ -136,7 +136,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         }
     }
     function createNewFolder() {
-        setIsLoading(true);
         if (!newFileName) setNewFileName("Untitled folder");
 
         axios.post("/api/folder", {
@@ -152,8 +151,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }
 
     function createNewFile() {
-        setIsLoading(true);
-
         axios.post("/api/file", {
             name: newFileName,
             folder: openFolderId,
@@ -213,7 +210,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setToDeleteItem(null);
                 setIter(iter + 1);
             }
-        }).catch(handleError);
+        }).catch(handleError).finally(() => setIsLoading(false));
     }   
 
     
@@ -266,10 +263,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             <div className="text-center">
                 <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
                 <div className="flex items-center justify-center gap-4 mt-6">
-                    <PrimaryButton 
-                        onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
-                        // isLoading={isLoading}
-                    >Delete</PrimaryButton>
+                    <div className="relative">
+                        <PrimaryButton 
+                            onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
+                            disabled={isLoading}
+                        ><span className={isLoading ? "invisible " : ""}>Delete</span></PrimaryButton>
+                        {isLoading && <div className="up-spinner"/>}
+                    </div>
                     <Button onClick={() => setToDeleteItem(null)} className="font-semibold text-sm">Cancel</Button>
                 </div>
             </div>
