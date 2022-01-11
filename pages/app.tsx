@@ -235,11 +235,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         }, []);
 
         return file ? (
-            <div ref={thisMenu} id={file._id} className="bg-white rounded-md shadow-lg z-10 fixed" style={{top: y, left: x}}>
+            <div ref={thisMenu} id={file._id} className="bg-white shadow-md z-10 fixed text-sm border border-gray-300 text-gray-600" style={{top: y, left: x}}>
                 <Button onClick={() => {
                     setToDeleteItem(file);
                     setToDeleteItemForRightClick([null, null, null]);
-                }} className="flex hover:bg-gray-50 p-4 items-center">
+                }} className="flex hover:bg-gray-100 py-2 px-4 items-center">
                     <FiTrash /><span className="ml-2">Delete</span>
                 </Button>
             </div>
