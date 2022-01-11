@@ -45,7 +45,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [openSectionId, setOpenSectionId] = useState<string>(null);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
-    const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) : null
+    const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) 
+        ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) 
+        : null
 
     // Object creation/deletion
     const dateFileName = format(new Date(), "yyyy-MM-dd");
@@ -65,7 +67,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
 
     useEffect(() => {
-        let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
+        let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) 
+            ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) 
+            : null
         // setOpenSection(firstOpenSection)
         setOpenSectionId(props.lastOpenedFile.lastOpenSection)
         setSectionBody(firstOpenSection ? firstOpenSection.body : "")
@@ -292,7 +296,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
         </Modal>}
 
-        <Container className="flex appContainer overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
+        <Container className="flex overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
             <Rnd 
                 default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} 
                 minWidth={100} 
@@ -383,7 +387,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 <>
                 {/* File title */}
                 <div className="mb-4">
-                    {openFile ? <H2>{openFile.name}</H2> : <Skeleton height={30}/>}
+                    {openFile ? <H2>{openFile.name}</H2> : <div className="mx-auto w-full md:w-52 overflow-x-hidden"><Skeleton height={36}/></div>}
                 </div>
                 {/* File sections */}
                 <div className="text-base text-gray-400">
@@ -434,44 +438,46 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         )}
                         <hr/>
                     </div>}
-                    {openFile && openFile.sectionArr.map(s => 
-                        <>
-                        <Accordion
-                            key={`${s._id}-0`}
-                            label={
-                                <div className="flex p-2 items-center" style={{height: "30px"}}>
-                                    <p>{s.name}</p>
-                                    <FaAngleLeft size={14} className="ml-auto"/>
-                                </div>
-                            }                            
-                            setOpenState={(event) => {
-                                const isClickingOnOpenAccordion = openSectionId == s._id
-                                handleSectionOnClickAccordion(event, s, isClickingOnOpenAccordion)
-                                axios.post("/api/file", {
-                                    id: openFileId, 
-                                    lastOpenSection: isClickingOnOpenAccordion ? "null" : s._id
-                                }).then(res => {
-                                    console.log(res.data.message)
-                                    setIter(prevIter => prevIter + 1)
-                                }).catch(e => console.log(e))
-                            }}
-                            openState={openSectionId == s._id}
-                        >
-                            <SimpleMDE
-                                id={`hellosection-${s._id}`}
-                                onChange={setSectionBody}
-                                value={sectionBody}
-                                options={{
-                                    spellChecker: false,
-                                    placeholder: "Unload your working memory ✨ ...",
-                                    toolbar: []
+                    {openFile && openFile.sectionArr.map(s => {
+                        const thisSectionIsOpen = openSectionId == s._id
+                        return (
+                            <>
+                            <Accordion
+                                key={`${s._id}-0`}
+                                label={
+                                    <div className="flex p-2 items-center" style={{height: "30px"}}>
+                                        <p>{s.name}</p>
+                                        {thisSectionIsOpen ? <FaAngleDown size={14} className="ml-auto"/> : <FaAngleLeft size={14} className="ml-auto"/>}
+                                    </div>
+                                }                            
+                                setOpenState={(event) => {
+                                    handleSectionOnClickAccordion(event, s, thisSectionIsOpen)
+                                    axios.post("/api/file", {
+                                        id: openFileId, 
+                                        lastOpenSection: thisSectionIsOpen ? "null" : s._id
+                                    }).then(res => {
+                                        console.log(res.data.message)
+                                        setIter(prevIter => prevIter + 1)
+                                    }).catch(e => console.log(e))
                                 }}
-                                className="text-lg"
-                            />
-                        </Accordion>                        
-                        <hr key={`${s._id}-1`}/>
-                        </>
-                    )}
+                                openState={thisSectionIsOpen}
+                            >
+                                <SimpleMDE
+                                    id={`hellosection-${s._id}`}
+                                    onChange={setSectionBody}
+                                    value={sectionBody}
+                                    options={{
+                                        spellChecker: false,
+                                        placeholder: "Unload your working memory ✨ ...",
+                                        toolbar: []
+                                    }}
+                                    className="text-lg"
+                                />
+                            </Accordion>                        
+                            <hr key={`${s._id}-1`}/>
+                            </>
+                        )
+                    })}
                 </div>
 
                 </> : <div className="flex items-center justify-center text-center h-1/2">
