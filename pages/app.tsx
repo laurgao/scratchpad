@@ -41,7 +41,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
     // Current opened items
-    // const [openSection, setOpenSection] = useState<DatedObj<SectionObj>>(null);
     const [openSectionId, setOpenSectionId] = useState<string>(null);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
@@ -63,8 +62,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
-
     const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
+    const handleError = (e) => {
+        console.log(e);
+        setError(e);
+    }
 
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) 
@@ -89,7 +91,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }, [sectionBody, isSaved])
 
     useEffect(() => {setIsSaved(true);}, [openFileId])
-    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId}).then(res => console.log(res.data.message)).catch(e => console.log(e))}, [openFileId])
+    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId}).then(res => console.log(res.data.message)).catch(handleError)}, [openFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
@@ -148,11 +150,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
             }
-        }).catch(e => {
-            setIsLoading(false);
-            setError(e);
-            console.log(e);
-        });
+        }).catch(handleError);
     }
 
     function createNewFile() {
@@ -173,11 +171,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setOpenSectionId(res.data.createdSectionId);
                 setSectionBody("");
             }
-        }).catch(e => {
-            setIsLoading(false);
-            setError(e);
-            console.log(e);
-        });
+        }).catch(handleError);
     }
 
     function saveFile(id, value) {
@@ -195,10 +189,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIsSaved(true);
                 setIter(iter + 1);
             }
-        }).catch(e => {
-            setError(e);
-            console.log(e);
-        });
+        }).catch(handleError);
     }
 
     function onSubmit() {
@@ -230,11 +221,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setToDeleteItem(null);
                 setIter(iter + 1);
             }
-        }).catch(e => {
-            setIsLoading(false);
-            setError(e);
-            console.log(e);
-        });
+        }).catch(handleError);
     }   
 
     
@@ -416,12 +403,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                                     setSectionBody("");
                                                     setNewSectionName("");
                                                 }
-                                            }).catch(e => {
-                                                setIsLoading(false);
-                                                setError(e);
-                                                console.log(e);
-                                            });
-                                            setIsCreateNewSection(false);
+                                            }).catch(handleError).finally(() => setIsCreateNewSection(false));
                                         } else if (e.key === "Escape") {
                                             setIsCreateNewSection(false);
                                             setNewSectionName("");
@@ -458,7 +440,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     }).then(res => {
                                         console.log(res.data.message)
                                         setIter(prevIter => prevIter + 1)
-                                    }).catch(e => console.log(e))
+                                    }).catch(handleError)
                                 }}
                                 openState={thisSectionIsOpen}
                             >
