@@ -62,7 +62,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
 
-    const mainContainerHeight = openSectionId ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
+    const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
 
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
@@ -166,6 +166,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
                 setOpenFileId(res.data.id);
+                setOpenSectionId(res.data.createdSectionId);
                 setSectionBody("");
             }
         }).catch(e => {
@@ -406,8 +407,10 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                                     setIsLoading(false);
                                                 } else {
                                                     console.log(res.data.message);
-                                                    setNewSectionName("");
                                                     setIter(iter + 1);
+                                                    setOpenSectionId(res.data.id);
+                                                    setSectionBody("");
+                                                    setNewSectionName("");
                                                 }
                                             }).catch(e => {
                                                 setIsLoading(false);
