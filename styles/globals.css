@@ -33,6 +33,23 @@ body {
 	}
 }
 
+.loading-bar {
+	width: 100px;
+	height: 20px;
+	border-radius: 10px;
+	background-color: rgb(59, 130, 246);
+	animation: loading-swipe 1s linear infinite;
+}
+
+@keyframes loading-swipe {
+	0% {
+		transform: translateX(-100px);
+	}
+
+	100% {
+		transform: translateX(100vw)
+	}
+}
 
 /**********
 SCROLLBAR
