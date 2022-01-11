@@ -67,7 +67,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) : null
         // setOpenSection(firstOpenSection)
-        setOpenSectionId(firstOpenSection._id)
+        setOpenSectionId(props.lastOpenedFile.lastOpenSection)
         setSectionBody(firstOpenSection ? firstOpenSection.body : "")
     }, [])
 
