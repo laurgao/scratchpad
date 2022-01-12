@@ -65,7 +65,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
     const handleError = (e) => {
         console.log(e);
-        setError(e);
+        setError(e.message);
     }
 
     useEffect(() => {
@@ -91,7 +91,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }, [sectionBody, isSaved])
 
     useEffect(() => {setIsSaved(true);}, [openFileId])
-    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId}).then(res => console.log(res.data.message)).catch(handleError)}, [openFileId])
+    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId || ""}).then(res => console.log(res.data.message)).catch(handleError)}, [openFileId])
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
