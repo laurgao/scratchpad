@@ -37,8 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }}
                 ]);
                 
-                if (!thisObject || !thisObject.length) return res.status(404);
-                
                 return res.status(200).json({data: thisObject});
             } catch (e) {
                 return res.status(500).json({message: e});                        

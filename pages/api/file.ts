@@ -49,6 +49,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     const savedSection = await newSection.save();
                     
+                    savedFile.lastOpenSection = savedSection._id;
+                    await savedFile.save();
+                    
                     return res.status(200).json({
                         message: "File created! ✨", 
                         id: savedFile._id.toString(), 
