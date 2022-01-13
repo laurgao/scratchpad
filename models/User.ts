@@ -1,5 +1,7 @@
-import mongoose, { Model } from "mongoose";
-import { DatedObj, UserObj } from "../utils/types";
+import mongoose, { Document } from "mongoose";
+import { UserObj } from "../utils/types";
+
+interface UserDoc extends UserObj, Document {}
 
 const UserSchema = new mongoose.Schema({
     email: { required: true, type: String },
@@ -10,4 +12,4 @@ const UserSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-export const UserModel: Model<DatedObj<UserObj>> = mongoose.models.user || mongoose.model("user", UserSchema);
+export const UserModel = mongoose.models.user || mongoose.model<UserDoc>("user", UserSchema);

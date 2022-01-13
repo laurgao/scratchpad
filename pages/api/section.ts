@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
+import { FileModel } from "../../models/File";
 import { SectionModel } from "../../models/Section";
 import dbConnect from "../../utils/dbConnect";
 
@@ -26,17 +27,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     
                     return res.status(200).json({message: "Section saved! ✨"});                            
                 } else {
-                    if (!(req.body.file)) {
-                        return res.status(406);            
-                    }
+                    if (!(req.body.file)) return res.status(406);
+                    
+                    const thisFile = await FileModel.findById(req.body.file)                    
+                    if (!thisFile) return res.status(404).send("No file found with matching ID");
                     
                     const newSection = new SectionModel({
                         body: req.body.body || "",
                         name: req.body.name || "",
                         file: req.body.file,                             
-                    });
-                    
+                    });                    
                     const savedSection = await newSection.save();
+                    
+                    thisFile.lastOpenSection = savedSection._id;
+                    await thisFile.save();
                     
                     return res.status(200).json({message: "Section created! ✨", id: savedSection._id.toString()});
                 }            
@@ -57,8 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const thisObject = await SectionModel.findById(req.body.id);
                 
                 if (!thisObject) return res.status(404);
-                // if (thisObject.userId.toString() !== session.userId) return res.status(403);
-                // file does not have userId
+                // if (thisObject.userId.toString() !== thisUser._id) return res.status(403);
+                // section does not have userId
                 
                 await SectionModel.deleteOne({_id: req.body.id});
                 

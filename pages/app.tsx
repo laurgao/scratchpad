@@ -91,7 +91,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }, [sectionBody, isSaved])
 
     useEffect(() => {setIsSaved(true);}, [openFileId])
-    useEffect(() => {axios.post("/api/user", {lastOpenedFile: openFileId || ""}).then(res => console.log(res.data.message)).catch(handleError)}, [openFileId])
+    const updateLastOpenedFile = (fileId) => axios.post("/api/user", {lastOpenedFile: fileId || ""}).then(res => console.log(res.data.message)).catch(handleError)
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
     useEffect(() => {
         const x = document.getElementsByClassName("autosave")
@@ -203,9 +203,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             if (res.data.error) handleError(res.data.error);
             else {
                 console.log(res.data.message);
-                if (type === "file" && openFileId === fileId) setOpenFileId("");
+                if (type === "file" && openFileId === fileId) {
+                    setOpenFileId("");
+                    updateLastOpenedFile("");
+                }
                 if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
-                    setOpenFileId("")
+                    setOpenFileId("");
+                    updateLastOpenedFile("");
                 }
                 setToDeleteItem(null);
                 setIter(iter + 1);
@@ -356,7 +360,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                             setToDeleteItemForRightClick([file, e.pageX, e.pageY])
                                         }} 
                                         onClick={() => {
-                                            setOpenFileId(file._id)
+                                            setOpenFileId(file._id);
+                                            updateLastOpenedFile(file._id);
                                             let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
                                             setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
                                             setSectionBody(nextOpenSection ? nextOpenSection.body : "")
