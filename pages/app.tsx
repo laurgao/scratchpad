@@ -19,6 +19,7 @@ import H2 from "../components/H2";
 import Input from "../components/Input";
 import Modal from "../components/Modal";
 import PrimaryButton from "../components/PrimaryButton";
+import ResizableRight from "../components/ResizableRight";
 import SEO from "../components/SEO";
 import { FileModel } from "../models/File";
 import { UserModel } from "../models/User";
@@ -290,14 +291,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         </Modal>}
 
         <Container className="flex overflow-y-hidden" width="full" padding={0} style={{height: mainContainerHeight}}>
-            <Rnd 
-                default={{x: 0, y: 0, width: 200, height: mainContainerHeight}} 
+            <ResizableRight 
+                defaultWidth={200}
+                style={{height: mainContainerHeight}}
                 minWidth={100} 
-                maxHeight={mainContainerHeight} 
-                style={{position: "static" }} 
                 className="overflow-auto px-6 bg-gray-100 pb-4" 
-                disableDragging={true} 
-                enableResizing={{right: true, bottom: false, bottomLeft: false, bottomRight: false, top: false, topLeft: false, topRight: false, left: false}}>
+            >
                 <div className="text-xs text-gray-400 my-4">
                     {isNewFolder ? (
                         <>
@@ -372,7 +371,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </Accordion>
                     </div>
                 )}
-            </Rnd>
+            </ResizableRight>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
                     <p className="text-red-500 font-bold text-center mb-8">{error}</p>
