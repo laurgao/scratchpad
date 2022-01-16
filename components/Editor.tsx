@@ -5,7 +5,6 @@ import SimpleMDE from "react-simplemde-editor";
 
 const Editor = ({value, setValue, createSection, saveSection}: {value: string, setValue: Dispatch<SetStateAction<string>>, createSection: (name: string, body: string) => any, saveSection: (body: string) => any}) => {
     const [lastEvent, setLastEvent] = useState(false)
-    // const [secondLastEvent, setSecondLastEvent] = useState(false)
     const [lastEvents, setLastEvents] = useState([])
     const [h1Line, setH1Line] = useState(null)
     const editorRef = useRef();
@@ -60,42 +59,16 @@ const Editor = ({value, setValue, createSection, saveSection}: {value: string, s
             setLastEvent(isH1)
             if (isH1) setH1Line(cursorInfo.line)
         },
-        keydown: (instance, event) => {
+        keydown: (instance) => {
             const cursorInfo = instance.getCursor();
-            // When enter, the line ur entering from is the cursorInfo.line
             const thisLine = instance.doc.getLine(cursorInfo.line);
-            // const prevLine = cursorInfo.line > 0 ? instance.doc.getLine(cursorInfo.line-1) : "";
 
             const isH1 = thisLine.substr(0, 2) === "# ";
             setLastEvent(isH1)
             if (isH1) setH1Line(cursorInfo.line)
-//             if (isH1 && event.key === "Enter") setLastEvent(false)
-//             else 
-
-//             if (isH1 && event.key === "Enter") {           
-
-//                 // @ts-ignore
-//                 const codemirror = editorRef.current.simpleMde.codemirror;
-//                 const newBodyArr = instance.doc.children[0].lines.filter((l, idx) => idx > cursorInfo.line).map(l => l.text)
-//                 const newBody = newBodyArr.join(`
-// `)
-              
-//                 // Delete everything under and including the h1.
-//                 codemirror.doc.replaceRange(
-//                     "",
-//                     {line: cursorInfo.line, ch: 0},
-//                     {line: instance.lineCount(), ch:0}
-//                 );
-//                 const formerSectionValue = codemirror.doc.children[0].lines.map(l => l.text).join(`
-// `)
-//                 saveSection(formerSectionValue)
-                
-//                 const name = thisLine.substr(2, thisLine.length)
-//                 createSection(name, newBody)
-//             }
-
         }
     }), [])
+
     return (
         <SimpleMDE
             ref={editorRef}

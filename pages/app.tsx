@@ -7,14 +7,14 @@ import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession, signOut, useSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
-import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
+import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiSettings, FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
 import Container from "../components/Container";
-import Editor from "../components/Editor";
+import EditorAndTitle from "../components/EditorAndTitle";
 import H2 from "../components/H2";
 import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
@@ -31,7 +31,6 @@ import { waitForEl } from "../utils/key";
 import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
 import { A } from "./index";
 
-const AUTOSAVE_INTERVAL = 1000
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
     // App lifecycle
@@ -44,7 +43,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
     // Current opened items
-    const [openSectionId, setOpenSectionId] = useState<string>(null);
+    const [openSectionId, setOpenSectionId] = useState<string>(props.lastOpenedFile.lastOpenSection);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
     const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) 
@@ -61,8 +60,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
 
     // Saving
-    const [sectionBody, setSectionBody] = useState<string>("");
-    const [isSaved, setIsSaved] = useState<boolean>(true);
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
@@ -72,49 +69,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         setError(e.message);
     }
 
-    useEffect(() => {
-        let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) 
-            ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) 
-            : null
-        // setOpenSection(firstOpenSection)
-        setOpenSectionId(props.lastOpenedFile.lastOpenSection)
-        setSectionBody(firstOpenSection ? firstOpenSection.body : "")
-    }, [])
-
-    useEffect(() => {if (openFileId && openSectionId) setIsSaved(false); }, [sectionBody])  
-    
-    function saveSection(id, value) {
-        console.log("saving...")
-
-        axios.post("/api/section", {
-            id: id,
-            body: value,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIsSaved(true);
-                setIter(iter + 1);
-            }
-        }).catch(handleError);
-    }
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (openSectionId && !isSaved) saveSection(openSectionId, sectionBody)
-            
-        }, AUTOSAVE_INTERVAL);
-
-        return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-    }, [sectionBody, isSaved])
-
-    useEffect(() => {setIsSaved(true);}, [openFileId])
     const updateLastOpenedFile = (fileId) => axios.post("/api/user", {lastOpenedFile: fileId || ""}).then(res => console.log(res.data.message)).catch(handleError)
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
-    useEffect(() => {
-        const x = document.getElementsByClassName("autosave")
-        if (x && x.length > 0) x[x.length - 1].innerHTML = isSaved ? "Saved" : "Saving..."
-    }, [isSaved])
 
     function onCreateNewFolder() {
         if (!openFolderId) setNewFileName("");
@@ -145,7 +101,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             setOpenSectionId(null);
         } else {
             setOpenSectionId(object._id);
-            setSectionBody(object.body || "")
+            // setSectionBody(object.body || "")
         }
     }
     function createNewFolder() {
@@ -175,7 +131,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setNewFileName(dateFileName);
                 setOpenFileId(res.data.id);
                 setOpenSectionId(res.data.createdSectionId);
-                setSectionBody("");
+                // setSectionBody("");
             }
         }).catch(handleError);
     }
@@ -197,7 +153,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 console.log(res.data.message);
                 setIter(iter + 1);
                 setOpenSectionId(res.data.id);
-                setSectionBody(res.data.body || "");
+                // setSectionBody(res.data.body || "");
                 setNewSectionName("");
             }
         }).catch(handleError).finally(() => setIsCreateNewSection(false));
@@ -364,7 +320,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                             updateLastOpenedFile(file._id);
                                             let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
                                             setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
-                                            setSectionBody(nextOpenSection ? nextOpenSection.body : "")
+                                            // setSectionBody(nextOpenSection ? nextOpenSection.body : "")
                                         }}
                                     >{file.name}</p>
                                 </div>
@@ -431,31 +387,16 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         {openFile && openFile.sectionArr.map(s => {
                             const thisSectionIsOpen = openSectionId == s._id
                             return (
-                                <>
-                                <Accordion
-                                    key={`${s._id}-0`}
-                                    label={
-                                        <div className="flex p-2 items-center" style={{height: "30px"}}>
-                                            <p>{s.name}</p>
-                                            {thisSectionIsOpen ? <FaAngleDown size={14} className="ml-auto"/> : <FaAngleLeft size={14} className="ml-auto"/>}
-                                        </div>
-                                    }                            
-                                    setOpenState={(event) => {
-                                        handleSectionOnClickAccordion(event, s, thisSectionIsOpen)
-                                        axios.post("/api/file", {
-                                            id: openFileId, 
-                                            lastOpenSection: thisSectionIsOpen ? "null" : s._id
-                                        }).then(res => {
-                                            console.log(res.data.message)
-                                            setIter(prevIter => prevIter + 1)
-                                        }).catch(handleError)
-                                    }}
-                                    openState={thisSectionIsOpen}
-                                >
-                                    <Editor value={sectionBody} setValue={setSectionBody} createSection={createSection} saveSection={(body: string) => saveSection(openSectionId, body)}/>
-                                </Accordion>                        
-                                <hr key={`${s._id}-1`}/>
-                                </>
+                                <EditorAndTitle 
+                                    key={s._id} 
+                                    section={s} 
+                                    isOpen={thisSectionIsOpen}
+                                    handleSectionOnClickAccordion={handleSectionOnClickAccordion}
+                                    createSection={createSection}
+                                    handleError={handleError}
+                                    fileId={openFileId}
+                                    setIter={setIter}
+                                />
                             )
                         })}
                     </div>
