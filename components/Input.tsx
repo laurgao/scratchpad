@@ -4,7 +4,7 @@ const Input = ({name, value, setValue, type="text", id="", placeholder="", onCha
     name?: string,
     value: string,
     setValue?: any,
-    onChange?: () => any, // you need one of setValue and onChange
+    onChange?: (e) => any, // you need one of setValue and onChange
     type?: "text"|"textarea"|"date",
     id?: string,
     placeholder?: string,

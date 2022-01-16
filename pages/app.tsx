@@ -6,7 +6,7 @@ import JSZip from "jszip";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
-import { getSession, useSession, signOut } from "next-auth/client";
+import { getSession, signOut, useSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiSettings, FiTrash } from "react-icons/fi";
@@ -66,13 +66,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
-    const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
+    const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 44px)" : "100vh"
     const handleError = (e) => {
         console.log(e);
         setError(e.message);
     }
-
-    const [fileDownloadUrl, setFileDownloadUrl] = useState<string>("")
 
     useEffect(() => {
         let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) 
@@ -287,26 +285,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             >
                 <div className="text-xs text-gray-400 my-4">
                     {isNewFolder ? (
-                        <>
-                        <Input 
-                            value={newFileName}
-                            setValue={setNewFileName}
-                            type="text"
-                            placeholder={`${!openFolderId ? "Folder" : "File"} name`}
-                            id="new-file"
-                            className="text-base text-black"
-                            onKeyDown={e => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    onSubmit();
-                                } else if (e.key === "Escape") {
-                                    e.preventDefault();
-                                    setIsNewFolder(false);
-                                }
-                            }}
-                        />
-                        {!!newFileName && <p>Enter to save<br/>Esc to exit</p>}
-                        </>
+                        <p className={(newFileName && openFolderId) ? "" : "invisible"}>Enter to save<br/>Esc to exit</p>
                     ) : (
                         <Button 
                             childClassName="flex items-center"
@@ -338,7 +317,24 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
                             openState={openFolderId == folder._id}
                         >
-                            <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">{folder.fileArr && folder.fileArr.map(file => 
+                            <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">
+                                {(folder._id === openFolderId && isNewFolder) && (
+                                    <div className="px-2 py-1">
+                                        <Input 
+                                            value={newFileName}
+                                            setValue={setNewFileName}
+                                            type="text"
+                                            placeholder="File name"
+                                            id="new-file"
+                                            className="text-base text-gray-500"
+                                            onKeyDown={e => {
+                                                if (e.key === "Enter") onSubmit()
+                                                else if (e.key === "Escape") setIsNewFolder(false)
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                {folder.fileArr && folder.fileArr.map((file, idx) => 
                                 <div key={file._id}>
                                     <p 
                                         className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
@@ -358,6 +354,23 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             )}</div>
                         </Accordion>
                     </div>
+                )}
+                {(isNewFolder && !openFolderId) && (
+                    <>
+                    <Input 
+                        value={newFileName}
+                        setValue={setNewFileName}
+                        type="text"
+                        placeholder="Folder name"
+                        id="new-file"
+                        className="text-base text-gray-500"
+                        onKeyDown={e => {
+                            if (e.key === "Enter") onSubmit();
+                            else if (e.key === "Escape") setIsNewFolder(false);
+                        }}
+                    />
+                    {!!newFileName && <p className="text-xs text-gray-400">Enter to save<br/>Esc to exit</p>}
+                    </>
                 )}
             </ResizableRight>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
