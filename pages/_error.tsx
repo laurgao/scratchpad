@@ -7,7 +7,7 @@ const Error = ({statusCode}) => {
         <Container className="flex items-center justify-center text-center" style={{height: "calc(100vh - 98px)"}}>
             <div>
                 <div className="flex items-center justify-center mb-10">
-                {statusCode && <div className="border-r border-black pr-4 mr-4 h-20 flex items-center">
+                    {statusCode && <div className="border-r border-black pr-4 mr-4 h-20 flex items-center">
                         <H2 className="">{statusCode}</H2>
                     </div>}
                     <p>
@@ -16,7 +16,7 @@ const Error = ({statusCode}) => {
                             : 'A client-side error occured.'}
                     </p>
                 </div>
-                <p>Want to report a bug? I'd greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad">GitHub</A>. Thank you :D</p>
+                <p>Want to report a bug? I&apos;d greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
             </div>
         </Container>
     )
