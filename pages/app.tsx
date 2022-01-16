@@ -1,6 +1,7 @@
 import axios from "axios";
 import { format } from "date-fns";
 import "easymde/dist/easymde.min.css";
+import JSZip from "jszip";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
@@ -12,6 +13,7 @@ import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
+import { saveAs } from 'file-saver';
 import Button from "../components/Button";
 import Container from "../components/Container";
 import H2 from "../components/H2";
@@ -356,43 +358,38 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </Accordion>
                     </div>
                 )}
-                {fileDownloadUrl && <a 
-                    // style={{display: "none"}}
-                    id="thisDownloadAnchor"
-                    download={(openFile ? openFile.name : "f") + ".md"}
-                    href={fileDownloadUrl}
-                >download it</a>}
                 <PrimaryButton onClick={() => {
                     try {
-                        let markdownTextOfCombinedSections = "";
-                        for (let section of openFile.sectionArr) {
-                            markdownTextOfCombinedSections += "# " + (section.name || "")
-                            markdownTextOfCombinedSections += `
+                        var zip = new JSZip();
+
+                        for (let file of folders.find(f => f._id === openFolderId).fileArr) {
+                            let markdownTextOfCombinedSections = "";
+                            for (let section of file.sectionArr) {
+                                markdownTextOfCombinedSections += "# " + (section.name || "")
+                                markdownTextOfCombinedSections += `
 ---
 
 `
-                            markdownTextOfCombinedSections += section.body || ""
-                            markdownTextOfCombinedSections += `
+                                markdownTextOfCombinedSections += section.body || ""
+                                markdownTextOfCombinedSections += `
 
 
 `
+                            }
+                            zip.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                         }
 
-                        // Download it
-                        const blob = new Blob([markdownTextOfCombinedSections]);
-                        const blobFileDownloadUrl = URL.createObjectURL(blob);  
-                        setFileDownloadUrl(blobFileDownloadUrl)
-                        // waitForElClick("thisDownloadAnchor", () => {
-                        //     URL.revokeObjectURL(fileDownloadUrl);  // free up storage--no longer needed.
-                        //     setFileDownloadUrl("")
-                        // })
+                        zip.generateAsync({type:"blob"})
+                        .then(function(content) {
+                            saveAs(content, "example.zip");
+                        });
 
                     } catch(e) {
                         console.log(e)
                         setError(e)
                     }
 
-                }}>Export files</PrimaryButton>
+                }}>Export all files</PrimaryButton>
             </ResizableRight>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
