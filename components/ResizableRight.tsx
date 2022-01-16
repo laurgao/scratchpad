@@ -6,7 +6,7 @@ export default function ResizableRight(props: React.HTMLProps<HTMLDivElement> & 
 
     let propsCopy = {...props};
     delete propsCopy.defaultWidth;
-    delete propsCopy.width;
+    delete propsCopy.minWidth;
     delete propsCopy.draggedBorderHeight
     propsCopy.style = {...props.style, width: width}
     
