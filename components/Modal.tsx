@@ -7,7 +7,7 @@ export default function Modal({isOpen, onRequestClose, children, small = false}:
     children: ReactNode,
     small?: boolean,
 }) {
-    const modalClasses = "top-24 left-1/2 fixed bg-white p-6 rounded-md shadow-xl mx-4";
+    const modalClasses = "top-24 left-1/2 fixed bg-white rounded-md shadow-xl mx-4 " + (small ? "p-6" : "p-10");
 
     return (
         <ReactModal

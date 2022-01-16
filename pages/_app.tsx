@@ -15,9 +15,6 @@ export default function App({Component, pageProps}) {
     const router = useRouter();
     return (
         <Provider session={pageProps.session}>
-             {!["/"].includes(router.route) && (
-                <Navbar/>
-            )}
             <div id="app-root">
                 <Component {...pageProps} />
             </div>

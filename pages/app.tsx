@@ -1,19 +1,19 @@
 import axios from "axios";
 import { format } from "date-fns";
 import "easymde/dist/easymde.min.css";
+import { saveAs } from 'file-saver';
 import JSZip from "jszip";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
-import { getSession } from "next-auth/client";
+import { getSession, useSession, signOut } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
-import { FiTrash } from "react-icons/fi";
+import { FiSettings, FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
-import { saveAs } from 'file-saver';
 import Button from "../components/Button";
 import Container from "../components/Container";
 import H2 from "../components/H2";
@@ -64,6 +64,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [sectionBody, setSectionBody] = useState<string>("");
     const [isSaved, setIsSaved] = useState<boolean>(true);
 
+    const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
     const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
     const handleError = (e) => {
@@ -358,42 +359,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </Accordion>
                     </div>
                 )}
-                <PrimaryButton onClick={() => {
-                    try {
-                        var zip = new JSZip();
-
-                        for (let folder of folders) {
-                            var thisFolder = zip.folder(folder.name);
-
-                            for (let file of folder.fileArr) {
-                                let markdownTextOfCombinedSections = "";
-                                for (let section of file.sectionArr) {
-                                    markdownTextOfCombinedSections += "# " + (section.name || "")
-                                    markdownTextOfCombinedSections += `
----
-
-`
-                                    markdownTextOfCombinedSections += section.body || ""
-                                    markdownTextOfCombinedSections += `
-
-
-`
-                                }
-                                thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
-                            }
-                        }
-
-                        zip.generateAsync({type:"blob"})
-                        .then(function(content) {
-                            saveAs(content, "example.zip");
-                        });
-
-                    } catch(e) {
-                        console.log(e)
-                        setError(e)
-                    }
-
-                }}>Export all files</PrimaryButton>
             </ResizableRight>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
@@ -493,10 +458,80 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 }
             </div>
+            <div className="w-12 flex items-end justify-center bg-gray-100">
+                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-500" size={25}/></Button>
+            </div>
 
         </Container>
+        <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)} folders={folders}/>
+
+
         </>
     );
+}
+
+
+export const SettingsModal = ({isOpen, onRequestClose, folders}: {isOpen: boolean, onRequestClose: () => any, folders: FolderObjGraph[]}) => {
+    const [session, loading] = useSession();
+    const [error, setError] = useState<string>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(null);
+    return (
+        <Modal isOpen={isOpen} onRequestClose={onRequestClose}>
+            <p className="mb-4">You are logged in as {loading ? <Skeleton/> : session.user.email}</p>
+
+            <Button onClick={() => signOut()} className="border border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-white rounded-md transition font-semibold text-sm block">Sign out</Button>
+            <hr className="my-10"/>
+            <PrimaryButton 
+                isLoading={isLoading}
+                disabled={!folders}
+                onClick={() => {
+                    try {
+                        setIsLoading(true);
+                        setError(null);
+                        var zip = new JSZip();
+
+                        for (let folder of folders) {
+                            var thisFolder = zip.folder(folder.name);
+
+                            for (let file of folder.fileArr) {
+                                let markdownTextOfCombinedSections = "";
+                                for (let section of file.sectionArr) {
+                                    markdownTextOfCombinedSections += "# " + (section.name || "")
+                                    markdownTextOfCombinedSections += `
+---
+
+`
+                                    markdownTextOfCombinedSections += section.body || ""
+                                    markdownTextOfCombinedSections += `
+
+
+`
+                                }
+                                thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
+                            }
+                        }
+
+                        zip.generateAsync({type:"blob"})
+                        .then(function(content) {
+                            saveAs(content, "scratchpad-data.zip");
+                        })
+                        .finally(() => setIsLoading(false));
+
+                    } catch(e) {
+                        setIsLoading(false);
+                        setError(e.message)
+                        console.log(e)
+                    }
+
+                }}
+            >Export all files</PrimaryButton>
+            {error && (
+                <p className="text-red-500 font-bold mt-4">{error}</p>
+            )}
+        </Modal>
+
+    )
+
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
