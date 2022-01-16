@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from "react";
 import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
-import { Rnd } from 'react-rnd';
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
