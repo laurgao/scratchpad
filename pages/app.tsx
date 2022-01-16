@@ -277,13 +277,10 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             <div className="text-center">
                 <p>Are you sure you want to delete this {"user" in toDeleteItem ? "folder and all its files" : "file"}? This action cannot be undone.</p>
                 <div className="flex items-center justify-center gap-4 mt-6">
-                    <div className="relative">
-                        <PrimaryButton 
-                            onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
-                            isLoading={isLoading}
-                        ><span className={isLoading ? "invisible " : ""}>Delete</span></PrimaryButton>
-                        {isLoading && <div className="up-spinner"/>}
-                    </div>
+                    <PrimaryButton 
+                        onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
+                        isLoading={isLoading}
+                    >Delete</PrimaryButton>
                     <Button onClick={() => setToDeleteItem(null)} className="font-semibold text-sm">Cancel</Button>
                 </div>
             </div>
