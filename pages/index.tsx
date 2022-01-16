@@ -24,7 +24,7 @@ export default function Home(props: {loggedIn: boolean}) {
                 props.loggedIn ? 
                 <PrimaryButton href="/app">Visit dashboard</PrimaryButton> 
                 : 
-                <PrimaryButton onClick={() => signIn("google")} className="flex items-center"> 
+                <PrimaryButton onClick={() => signIn("google")} childClassName="flex items-center"> 
                     <FaGoogle/><span className="ml-2">Sign in</span>
                 </PrimaryButton>
             }</div>

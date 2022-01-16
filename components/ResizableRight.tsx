@@ -24,7 +24,7 @@ export default function ResizableRight(props: React.HTMLProps<HTMLDivElement> & 
             </div>
             
             <div 
-                className={`bg-invisible hover:bg-blue-100 transition w-1 ${isDragging ? "absolute z-30 bg-blue-300" : ""}`}
+                className={`bg-invisible hover:bg-blue-100 transition w-1 ${isDragging ? "absolute z-10 bg-blue-300" : ""}`}
                 style={{cursor: "col-resize", left: width, height: props.draggedBorderHeight}}
                 draggable={true} 
                 onDragStart={e => {

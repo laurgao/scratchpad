@@ -16,6 +16,7 @@ import Button from "../components/Button";
 import Container from "../components/Container";
 import H2 from "../components/H2";
 import Input from "../components/Input";
+import LoadingBar from "../components/LoadingBar";
 import Modal from "../components/Modal";
 import PrimaryButton from "../components/PrimaryButton";
 import ResizableRight from "../components/ResizableRight";
@@ -77,11 +78,25 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         setSectionBody(firstOpenSection ? firstOpenSection.body : "")
     }, [])
 
-    useEffect(() => {if (openFileId && openSectionId) {
-        setIsSaved(false);
-    }}, [sectionBody])  
+    useEffect(() => {if (openFileId && openSectionId) setIsSaved(false); }, [sectionBody])  
 
     useEffect(() => {
+        function saveFile(id, value) {
+            console.log("saving...")
+
+            axios.post("/api/section", {
+                id: id,
+                body: value,
+            }).then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    setIsSaved(true);
+                    setIter(iter + 1);
+                }
+            }).catch(handleError);
+        }
+
         const interval = setInterval(() => {
             if (openSectionId && !isSaved) saveFile(openSectionId, sectionBody)
             
@@ -114,18 +129,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
         Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
 
-        return () => {
-            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
-        };
+        return () => Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
     });
 
 
     const handleTextOnClick = (event: any, folderId: string, currentIsOpen: boolean) => {
-        if (currentIsOpen) {
-            setOpenFolderId("");
-        } else {
-            setOpenFolderId(folderId);
-        }
+        if (currentIsOpen) setOpenFolderId("");
+        else setOpenFolderId(folderId);
     }
     const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
         if (currentIsOpen) {
@@ -167,28 +177,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         }).catch(handleError);
     }
 
-    function saveFile(id, value) {
-        console.log("saving...")
-
-        axios.post("/api/section", {
-            id: id,
-            body: value,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIsSaved(true);
-                setIter(iter + 1);
-            }
-        }).catch(handleError);
-    }
-
     function onSubmit() {
-        if (!openFolderId) {
-            createNewFolder()
-        } else {
-            createNewFile()
-        }
+        if (!openFolderId) createNewFolder()
+        else createNewFile()
         setIsNewFolder(false);
     }
 
@@ -237,11 +228,16 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         }, []);
 
         return file ? (
-            <div ref={thisMenu} id={file._id} className="bg-white shadow-md z-10 absolute text-sm border border-gray-300 text-gray-600" style={{top: y, left: x}}>
+            <div 
+                ref={thisMenu}
+                id={file._id} 
+                className="bg-white shadow-md z-20 absolute text-sm border border-gray-300 text-gray-600" 
+                style={{top: y, left: x}}
+            >
                 <Button onClick={() => {
                     setToDeleteItem(file);
                     setToDeleteItemForRightClick([null, null, null]);
-                }} className="flex hover:bg-gray-100 py-2 px-4 items-center">
+                }} className="hover:bg-gray-100 py-2 px-4" childClassName="flex items-center">
                     <FiTrash /><span className="ml-2">Delete</span>
                 </Button>
             </div>
@@ -252,21 +248,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         <>
         <SEO />
 
-        {(!foldersData && !folders.length) && 
-            <div className="w-screen h-screen bg-black bg-opacity-80 absolute z-50 flex flex-col items-center justify-center top-0 left-0">
-                <p className="text-center text-white text-lg mb-6">Loading files...</p>
-                <div className="w-9/12 bg-gray-600 overflow-x-hidden relative" style={{
-                    height: 20,
-                    borderRadius: 10,
-                }}>
-                    <div className="loading-bar"></div>
-                </div>
-            </div>
-        }
+        {(!foldersData && !folders.length) && <LoadingBar/>}
 
         {!!hoverCoords && 
             <div 
-                className="bg-white border border-gray-400 p-1 z-50 absolute text-xs text-gray-400"
+                className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
                 style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1])}}
             >(win) ctrl + /<br/>(mac) cmd + /</div>
         }
@@ -318,7 +304,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         </>
                     ) : (
                         <Button 
-                            className="flex items-center"
+                            childClassName="flex items-center"
                             onClick={onCreateNewFolder}
                             onMouseLeave={(e) => setHoverCoords(null)}
                             onMouseMove={e => setHoverCoords([e.pageX, e.pageY])}
