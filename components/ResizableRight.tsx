@@ -1,12 +1,13 @@
 import {useState, useEffect} from "react";
 
-export default function ResizableRight(props: React.HTMLProps<HTMLDivElement> & {minWidth: number, defaultWidth: number}) {
+export default function ResizableRight(props: React.HTMLProps<HTMLDivElement> & {minWidth: number, defaultWidth: number, draggedBorderHeight: string}) {
     const [width, setWidth] = useState(props.defaultWidth);
     const [isDragging, setIsDragging] = useState(false)
 
     let propsCopy = {...props};
     delete propsCopy.defaultWidth;
     delete propsCopy.width;
+    delete propsCopy.draggedBorderHeight
     propsCopy.style = {...props.style, width: width}
     
     const [dragImg, setDragImg] = useState(null);
@@ -23,8 +24,8 @@ export default function ResizableRight(props: React.HTMLProps<HTMLDivElement> & 
             </div>
             
             <div 
-                className={`bg-invisible hover:bg-blue-100 transition w-1 ${isDragging ? "absolute z-30 h-screen bg-blue-300" : ""}`}
-                style={{cursor: "col-resize", left: width}}
+                className={`bg-invisible hover:bg-blue-100 transition w-1 ${isDragging ? "absolute z-30 bg-blue-300" : ""}`}
+                style={{cursor: "col-resize", left: width, height: props.draggedBorderHeight}}
                 draggable={true} 
                 onDragStart={e => {
                     setIsDragging(true)

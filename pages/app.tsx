@@ -293,6 +293,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             <ResizableRight 
                 defaultWidth={200}
                 style={{height: mainContainerHeight}}
+                draggedBorderHeight={mainContainerHeight}
                 minWidth={100} 
                 className="overflow-auto px-6 bg-gray-100 pb-4" 
             >
