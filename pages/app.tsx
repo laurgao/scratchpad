@@ -362,21 +362,25 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     try {
                         var zip = new JSZip();
 
-                        for (let file of folders.find(f => f._id === openFolderId).fileArr) {
-                            let markdownTextOfCombinedSections = "";
-                            for (let section of file.sectionArr) {
-                                markdownTextOfCombinedSections += "# " + (section.name || "")
-                                markdownTextOfCombinedSections += `
+                        for (let folder of folders) {
+                            var thisFolder = zip.folder(folder.name);
+
+                            for (let file of folder.fileArr) {
+                                let markdownTextOfCombinedSections = "";
+                                for (let section of file.sectionArr) {
+                                    markdownTextOfCombinedSections += "# " + (section.name || "")
+                                    markdownTextOfCombinedSections += `
 ---
 
 `
-                                markdownTextOfCombinedSections += section.body || ""
-                                markdownTextOfCombinedSections += `
+                                    markdownTextOfCombinedSections += section.body || ""
+                                    markdownTextOfCombinedSections += `
 
 
 `
+                                }
+                                thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                             }
-                            zip.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                         }
 
                         zip.generateAsync({type:"blob"})
