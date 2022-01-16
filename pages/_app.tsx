@@ -2,7 +2,6 @@ import { Provider } from "next-auth/client";
 import Router, { useRouter } from "next/router";
 import NProgress from "nprogress";
 import ReactModal from "react-modal";
-import Navbar from "../components/Navbar";
 import "../styles/globals.css";
 import "../styles/markdown-editor.css";
 import "../styles/nprogress.css";

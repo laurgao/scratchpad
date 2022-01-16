@@ -1,6 +1,5 @@
 import axios from "axios";
 import { format } from "date-fns";
-import "easymde/dist/easymde.min.css";
 import { saveAs } from 'file-saver';
 import JSZip from "jszip";
 import Mousetrap from "mousetrap";
@@ -12,10 +11,10 @@ import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
 import { FiSettings, FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
-import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
 import Container from "../components/Container";
+import Editor from "../components/Editor";
 import H2 from "../components/H2";
 import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
@@ -30,6 +29,7 @@ import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
 import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
+import { A } from "./index";
 
 const AUTOSAVE_INTERVAL = 1000
 
@@ -82,26 +82,26 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }, [])
 
     useEffect(() => {if (openFileId && openSectionId) setIsSaved(false); }, [sectionBody])  
+    
+    function saveSection(id, value) {
+        console.log("saving...")
+
+        axios.post("/api/section", {
+            id: id,
+            body: value,
+        }).then(res => {
+            if (res.data.error) handleError(res.data.error);
+            else {
+                console.log(res.data.message);
+                setIsSaved(true);
+                setIter(iter + 1);
+            }
+        }).catch(handleError);
+    }
 
     useEffect(() => {
-        function saveFile(id, value) {
-            console.log("saving...")
-
-            axios.post("/api/section", {
-                id: id,
-                body: value,
-            }).then(res => {
-                if (res.data.error) handleError(res.data.error);
-                else {
-                    console.log(res.data.message);
-                    setIsSaved(true);
-                    setIter(iter + 1);
-                }
-            }).catch(handleError);
-        }
-
         const interval = setInterval(() => {
-            if (openSectionId && !isSaved) saveFile(openSectionId, sectionBody)
+            if (openSectionId && !isSaved) saveSection(openSectionId, sectionBody)
             
         }, AUTOSAVE_INTERVAL);
 
@@ -184,6 +184,23 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         if (!openFolderId) createNewFolder()
         else createNewFile()
         setIsNewFolder(false);
+    }
+
+    function createSection(name?: string, body?: string) {
+        axios.post("/api/section", {
+            file: openFile._id,
+            name: name || "",
+            body: body || "",
+        }).then(res => {
+            if (res.data.error) handleError(res.data.error);
+            else {
+                console.log(res.data.message);
+                setIter(iter + 1);
+                setOpenSectionId(res.data.id);
+                setSectionBody(res.data.body || "");
+                setNewSectionName("");
+            }
+        }).catch(handleError).finally(() => setIsCreateNewSection(false));
     }
 
     function deleteFile(fileId: string, type: "file" | "folder" = "file") {
@@ -394,22 +411,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                         id="new-section"
                                         placeholder="New section name"
                                         onKeyDown={e => {
-                                            if (e.key === "Enter") {
-                                                console.log("Making new section!");
-                                                axios.post("/api/section", {
-                                                    file: openFile._id,
-                                                    name: newSectionName,
-                                                }).then(res => {
-                                                    if (res.data.error) handleError(res.data.error);
-                                                    else {
-                                                        console.log(res.data.message);
-                                                        setIter(iter + 1);
-                                                        setOpenSectionId(res.data.id);
-                                                        setSectionBody("");
-                                                        setNewSectionName("");
-                                                    }
-                                                }).catch(handleError).finally(() => setIsCreateNewSection(false));
-                                            } else if (e.key === "Escape") {
+                                            if (e.key === "Enter") createSection(newSectionName)
+                                            else if (e.key === "Escape") {
                                                 setIsCreateNewSection(false);
                                                 setNewSectionName("");
                                             }
@@ -449,17 +452,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     }}
                                     openState={thisSectionIsOpen}
                                 >
-                                    <SimpleMDE
-                                        id={`hellosection-${s._id}`}
-                                        onChange={setSectionBody}
-                                        value={sectionBody}
-                                        options={{
-                                            spellChecker: false,
-                                            placeholder: "Unload your working memory ✨ ...",
-                                            toolbar: []
-                                        }}
-                                        className="text-lg"
-                                    />
+                                    <Editor value={sectionBody} setValue={setSectionBody} createSection={createSection} saveSection={(body: string) => saveSection(openSectionId, body)}/>
                                 </Accordion>                        
                                 <hr key={`${s._id}-1`}/>
                                 </>
@@ -472,7 +465,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 }
             </div>
             <div className="w-12 flex items-end justify-center bg-gray-100">
-                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-500" size={25}/></Button>
+                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-400" size={20}/></Button>
             </div>
 
         </Container>
@@ -491,9 +484,10 @@ export const SettingsModal = ({isOpen, onRequestClose, folders}: {isOpen: boolea
     return (
         <Modal isOpen={isOpen} onRequestClose={onRequestClose}>
             <p className="mb-4">You are logged in as {loading ? <Skeleton/> : session.user.email}</p>
-
             <Button onClick={() => signOut()} className="border border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-white rounded-md transition font-semibold text-sm block">Sign out</Button>
+            
             <hr className="my-10"/>
+            
             <PrimaryButton 
                 isLoading={isLoading}
                 disabled={!folders}
@@ -541,6 +535,10 @@ export const SettingsModal = ({isOpen, onRequestClose, folders}: {isOpen: boolea
             {error && (
                 <p className="text-red-500 font-bold mt-4">{error}</p>
             )}
+            
+            <hr className="my-10"/>
+
+            <p>Want to report a bug? I&apos;d greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
         </Modal>
 
     )

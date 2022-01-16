@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await dbConnect();
                 
                 if (req.body.id) {
-                    if (!(req.body.body || req.body.name || req.body.file)) {
+                    if (!(typeof(req.body.body) === "undefined" || typeof(req.body.name) === "undefined" || req.body.file)) {
                         return res.status(406); 
                     }
                     const thisObject = await SectionModel.findById(req.body.id);
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     thisFile.lastOpenSection = savedSection._id;
                     await thisFile.save();
                     
-                    return res.status(200).json({message: "Section created! ✨", id: savedSection._id.toString()});
+                    return res.status(200).json({message: "Section created! ✨", id: savedSection._id.toString(), body: savedSection.body});
                 }            
             } catch (e) {
                 return res.status(500).json({message: e});            
