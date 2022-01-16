@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Button from "./Button";
 import Container from "./Container";
+import Image from "next/image"
 
 export default function Navbar() {
     const [session, loading] = useSession();
@@ -16,10 +17,12 @@ export default function Navbar() {
                     {!loading ? session ? (
                         <>
                         <Button onClick={() => signOut()} className="text-sm">Sign out</Button>
-                        <img
+                        <Image
                             src={session.user.image}
                             alt={`Profile picture of ${session.user.name}`}
-                            className="w-8 h-8 rounded-full"
+                            width={32}
+                            height={32}
+                            className="rounded-full"
                         />
                         </>
                     ) : (

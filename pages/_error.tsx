@@ -16,7 +16,7 @@ const Error = ({statusCode}) => {
                             : 'A client-side error occured.'}
                     </p>
                 </div>
-                <p>Want to report a bug? I'd greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
+                <p>Want to report a bug? I&apos;d greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
             </div>
         </Container>
     )

@@ -1,11 +1,11 @@
 import { format } from "date-fns";
 import { GetServerSideProps } from "next";
-import { getSession } from "next-auth/client";
+import { getSession, signIn } from "next-auth/client";
+import { FaGoogle } from "react-icons/fa";
 import Container from "../components/Container";
 import H2 from "../components/H2";
 import PrimaryButton from "../components/PrimaryButton";
 import SEO from "../components/SEO";
-import SignInButton from "../components/SignInButton";
 import { FileModel } from "../models/File";
 import { FolderModel } from "../models/Folder";
 import { SectionModel } from "../models/Section";
@@ -19,9 +19,16 @@ export default function Home(props: {loggedIn: boolean}) {
         <div className="bg-blue-300 absolute left-0 w-full" style={{height: "40vh", top: "80vh", zIndex: -10, transform: "skew(0deg, -5deg)",}}/>
         <Container className="mt-40 flex justify-center text-center flex-col mb-4">
             <H2 className="mb-4">Never clog your good notes with incoherent stuff again.</H2>
-            <p>Unload your working memory in a centralized place where you're <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
-            <div className="flex justify-center w-full my-10">{props.loggedIn ? <PrimaryButton href="/app">Visit dashboard</PrimaryButton> : <SignInButton />}</div>
-            <img src="/hero.png" className="mb-24"/>
+            <p>Unload your working memory in a centralized place where you&apos;re <i>supposed</i> to braindump incoherent stuff, and remove all those text files lying around your desktop.</p>
+            <div className="flex justify-center w-full my-10">{
+                props.loggedIn ? 
+                <PrimaryButton href="/app">Visit dashboard</PrimaryButton> 
+                : 
+                <PrimaryButton onClick={() => signIn("google")} className="flex items-center"> 
+                    <FaGoogle/><span className="ml-2">Sign in</span>
+                </PrimaryButton>
+            }</div>
+            <img src="/hero.png" alt="Dump of text files vs. Scratchpad" className="mb-24"/>
             
             <footer className="text-sm text-gray-400">
                 <A href="https://github.com/laurgao/scratchpad">Source code</A> on Github
