@@ -16,6 +16,7 @@ body {
 	border: 0.2rem solid rgba(255, 255, 255, 0.3);
 	border-top-color: white;
 	animation: up-spin 1s linear infinite;
+	cursor: wait;
 }
 
 .up-spinner.dark {

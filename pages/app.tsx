@@ -280,7 +280,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     <div className="relative">
                         <PrimaryButton 
                             onClick={() => deleteFile(toDeleteItem._id,"user" in toDeleteItem ? "folder" : "file")}
-                            disabled={isLoading}
+                            isLoading={isLoading}
                         ><span className={isLoading ? "invisible " : ""}>Delete</span></PrimaryButton>
                         {isLoading && <div className="up-spinner"/>}
                     </div>

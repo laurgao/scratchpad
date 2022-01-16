@@ -5,7 +5,7 @@ export type ButtonProps = (React.HTMLProps<HTMLButtonElement> | React.HTMLProps<
 export default function Button(props: ButtonProps) {
     const {href, className, children} = props; // This does not alter props
     
-    const classNames = "p-2 disabled:cursor-not-allowed " + className;
+    const classNames = className + " p-2" + (props.disabled ? " cursor-not-allowed " : "");
 
     return href ? (
         <Link href={href}>
