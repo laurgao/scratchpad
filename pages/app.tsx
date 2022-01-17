@@ -14,7 +14,7 @@ import Accordion from "react-robust-accordion";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
 import Container from "../components/Container";
-import EditorAndTitle from "../components/EditorAndTitle";
+import Editor from "../components/Editor";
 import H2 from "../components/H2";
 import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
@@ -387,7 +387,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                         {openFile && openFile.sectionArr.map(s => {
                             const thisSectionIsOpen = openSectionId == s._id
                             return (
-                                <EditorAndTitle 
+                                <Editor
                                     key={s._id} 
                                     section={s} 
                                     isOpen={thisSectionIsOpen}
