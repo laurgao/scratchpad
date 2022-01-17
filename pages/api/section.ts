@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
 import { FileModel } from "../../models/File";
 import { SectionModel } from "../../models/Section";
-import cleanForJSON from "../../utils/cleanForJSON";
 import dbConnect from "../../utils/dbConnect";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -14,14 +13,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await dbConnect();
                 
                 if (req.body.id) {
-                    if (!(typeof(req.body.body) === "undefined" || typeof(req.body.name) === "undefined" || req.body.file)) {
-                        return res.status(406); 
+                    if (!(typeof(req.body.body) === "undefined" || typeof(req.body.name) === "undefined" || req.body.file || req.body.addBody)) {
+                        return res.status(406).send("Missing params"); 
                     }
+                    if (req.body.body && req.body.addBody) return res.status(406).send("Can't have addBody and body");
                     const thisObject = await SectionModel.findById(req.body.id);
                     if (!thisObject) return res.status(404);
                     
-                    if (req.body.body) thisObject.body = req.body.body;
-                    if (req.body.name) thisObject.name = req.body.name;
+                    if (!(typeof(req.body.body) === "undefined")) thisObject.body = req.body.body;
+                    if (req.body.addBody) thisObject.body += req.body.addBody;
+                    if (!(typeof(req.body.body) === "undefined")) thisObject.body = req.body.body;
+                    if (!(typeof(req.body.name) === "undefined")) thisObject.name = req.body.name;
                     if (req.body.file) thisObject.file = req.body.file;
                     
                     await thisObject.save();
@@ -68,11 +70,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 await dbConnect();
                                
-                const thisObject = await SectionModel.findById(req.body.id);
+                const thisSection = await SectionModel.findById(req.body.id);
                 
-                if (!thisObject) return res.status(404);
+                if (!thisSection) return res.status(404);
                 // if (thisObject.userId.toString() !== thisUser._id) return res.status(403);
                 // section does not have userId
+
+                const thisFile = await FileModel.findById(thisSection.file);
+                thisFile.sectionsOrder = thisFile.sectionsOrder.filter(id => id.toString() !== thisSection._id.toString());
+                await thisFile.save();
                 
                 await SectionModel.deleteOne({_id: req.body.id});
                 

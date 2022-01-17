@@ -19,20 +19,11 @@ const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}
     useEffect(() => {if (fileData && fileData.data) setFile(fileData.data)}, [fileData])
 
     useEffect(() => {
-        if (fileData && fileData.data) setOpenSectionId(fileData.data.lastOpenSection)
-    }, [!!fileData])
+        if (!!fileData && !!fileData.data) setOpenSectionId(fileData.data.lastOpenSection)
+    }, [!!fileData && !!fileData.data, fileData])
 
     const [newSectionName, setNewSectionName] = useState<string>("");
     const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
-    
-    const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
-        if (currentIsOpen) {
-            setOpenSectionId(null);
-        } else {
-            setOpenSectionId(object._id);
-            // setSectionBody(object.body || "")
-        }
-    }
     
     function createSection(name?: string, body?: string, previousFileId?: string) {
         axios.post("/api/section", {
@@ -40,16 +31,18 @@ const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}
             name: name || "",
             body: body || "",
             previousFileId: previousFileId || null,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setOpenSectionId(res.data.id);
-                // setSectionBody(res.data.body || "");
-                setNewSectionName("");
-            }
-        }).catch(handleError).finally(() => setIsCreateNewSection(false));
+        })
+            .then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    setIter(iter + 1);
+                    setOpenSectionId(res.data.id);
+                    // setSectionBody(res.data.body || "");
+                    setNewSectionName("");
+                }
+            })
+            .catch(handleError).finally(() => setIsCreateNewSection(false));
     }
 
     return (
@@ -93,7 +86,6 @@ const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}
                         key={s._id} 
                         section={s} 
                         isOpen={thisSectionIsOpen}
-                        handleSectionOnClickAccordion={handleSectionOnClickAccordion}
                         createSection={createSection}
                         handleError={handleError}
                         fileId={fileId}

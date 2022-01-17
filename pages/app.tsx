@@ -83,41 +83,33 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         return () => Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
     });
 
-
-    const handleTextOnClick = (event: any, folderId: string, currentIsOpen: boolean) => {
-        if (currentIsOpen) setOpenFolderId("");
-        else setOpenFolderId(folderId);
-    }
     function createNewFolder() {
         if (!newFileName) setNewFileName("Untitled folder");
 
-        axios.post("/api/folder", {
-            name: newFileName,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error)
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setNewFileName(dateFileName);
-            }
-        }).catch(handleError);
+        axios.post("/api/folder", {name: newFileName,})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error)
+                else {
+                    console.log(res.data.message);
+                    setIter(iter + 1);
+                    setNewFileName(dateFileName);
+                }
+            })
+            .catch(handleError);
     }
 
     function createNewFile() {
-        axios.post("/api/file", {
-            name: newFileName,
-            folder: openFolderId,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setNewFileName(dateFileName);
-                setOpenFileId(res.data.id);
-                // setOpenSectionId(res.data.createdSectionId);
-                // setSectionBody("");
-            }
-        }).catch(handleError);
+        axios.post("/api/file", {name: newFileName, folder: openFolderId})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    setIter(iter + 1);
+                    setNewFileName(dateFileName);
+                    setOpenFileId(res.data.id);
+                }
+            })
+            .catch(handleError);
     }
 
     function onSubmit() {
@@ -129,26 +121,25 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     function deleteFile(fileId: string, type: "file" | "folder" = "file") {
         setIsLoading(true);
 
-        axios.delete(`/api/${type}`, {
-            data: {
-                id: fileId,
-            },
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                if (type === "file" && openFileId === fileId) {
-                    setOpenFileId("");
-                    updateLastOpenedFile("");
+        axios.delete(`/api/${type}`, { data: { id: fileId }})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    if (type === "file" && openFileId === fileId) {
+                        setOpenFileId("");
+                        updateLastOpenedFile("");
+                    }
+                    if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
+                        setOpenFileId("");
+                        updateLastOpenedFile("");
+                    }
+                    setToDeleteItem(null);
+                    setIter(iter + 1);
                 }
-                if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
-                    setOpenFileId("");
-                    updateLastOpenedFile("");
-                }
-                setToDeleteItem(null);
-                setIter(iter + 1);
-            }
-        }).catch(handleError).finally(() => setIsLoading(false));
+            })
+            .catch(handleError)
+            .finally(() => setIsLoading(false));
     }    
 
     const RightClickMenu = ({file, x=0, y=0}) => {
@@ -254,7 +245,11 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                 </div>
                             } 
                             open={true}
-                            setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
+                            setOpenState={(event) => {
+                                // Handle only allowing 1 folder open at a time
+                                if (openFolderId === folder._id) setOpenFolderId("");
+                                else setOpenFolderId(folder._id);
+                            }}
                             openState={openFolderId == folder._id}
                         >
                             <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">
@@ -275,23 +270,20 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                     </div>
                                 )}
                                 {folder.fileArr && folder.fileArr.map((file, idx) => 
-                                <div key={file._id}>
-                                    <p 
-                                        className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
-                                        onContextMenu={(e) => {
-                                            e.preventDefault()
-                                            setToDeleteItemForRightClick([file, e.pageX, e.pageY])
-                                        }} 
-                                        onClick={() => {
-                                            setOpenFileId(file._id);
-                                            updateLastOpenedFile(file._id);
-                                            // let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
-                                            // setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
-                                            // setSectionBody(nextOpenSection ? nextOpenSection.body : "")
-                                        }}
-                                    >{file.name}</p>
-                                </div>
-                            )}</div>
+                                    <div key={file._id}>
+                                        <p 
+                                            className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
+                                            onContextMenu={(e) => {
+                                                e.preventDefault()
+                                                setToDeleteItemForRightClick([file, e.pageX, e.pageY])
+                                            }} 
+                                            onClick={() => {
+                                                setOpenFileId(file._id);
+                                                updateLastOpenedFile(file._id);
+                                            }}
+                                        >{file.name}</p>
+                                    </div>
+                                )}</div>
                         </Accordion>
                     </div>
                 )}
