@@ -10,14 +10,16 @@ import { DatedObj, SectionObj } from "../utils/types";
 
 const AUTOSAVE_INTERVAL = 1000
 
-const Editor = ({section, isOpen, createSection, handleError, handleSectionOnClickAccordion, setIter, fileId}: {
+const Editor = ({section, isOpen, createSection, handleError, handleSectionOnClickAccordion, setIter, fileId, sectionsOrder, setOpenSectionId}: {
     section: DatedObj<SectionObj>,
     isOpen: boolean,
-    createSection: (name: string, body: string) => any,
+    createSection: (name: string, body: string, previousFileId?: string) => any,
     handleError: (e) => any,
     handleSectionOnClickAccordion: (event, section: DatedObj<SectionObj>, isOpen: boolean) => any,
     setIter: Dispatch<SetStateAction<number>>,
     fileId: string,
+    sectionsOrder: string[],
+    setOpenSectionId: Dispatch<SetStateAction<string>>,
 }) => {
     const editorRef = useRef();
     useEffect(() => {
@@ -40,8 +42,19 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
             
         }, AUTOSAVE_INTERVAL);
 
-        return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
+        // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
+        return () => {
+            clearInterval(interval); 
+            // if (!isSaved) saveSection(section._id, body)
+        }
     }, [body, isSaved])
+
+    useEffect(() => {
+        // Save section when component is unmounted
+        return () => {
+            if (!isSaved) saveSection(section._id, body)
+        }
+    }, [])
     
 
     useEffect(() => { if (body !== section.body) setIsSaved(false); }, [body])  
@@ -63,11 +76,11 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
     }
 
     // H1 new section stuff
-    const [lastEvent, setLastEvent] = useState(false)
-    const [lastEvents, setLastEvents] = useState([])
-    const [h1Line, setH1Line] = useState(null)
-    const [editingTitleValue, setEditingTitleValue] = useState(null);
-    const [initiateEditingTitleValue, setInitiateEditingTitleValue] = useState(false)
+    const [lastIsH1, setLastIsH1] = useState<boolean>(false)
+    const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
+    const [h1Line, setH1Line] = useState<number>(null)
+    const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
+    const [initiateEditingTitleValue, setInitiateEditingTitleValue] = useState<boolean>(false)
     
     const events = useMemo(() => ({
         cursorActivity: (instance) => {
@@ -75,7 +88,7 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
             const thisLine = instance.doc.getLine(cursorInfo.line)
             const isH1 = thisLine.substr(0, 2) === "# ";
 
-            setLastEvent(isH1)
+            setLastIsH1(isH1)
             if (isH1) setH1Line(cursorInfo.line)
         },
         keydown: (instance, event) => {
@@ -83,7 +96,7 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
             const thisLine = instance.doc.getLine(cursorInfo.line);
 
             const isH1 = thisLine.substr(0, 2) === "# ";
-            setLastEvent(isH1)
+            setLastIsH1(isH1)
             if (isH1) setH1Line(cursorInfo.line)
 
             if (cursorInfo.line === 0 && event.key === "ArrowUp") setInitiateEditingTitleValue(true)
@@ -101,7 +114,7 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
     }, [initiateEditingTitleValue, section.name, section._id])
 
     useEffect(() => {
-        if (!lastEvent && lastEvents[lastEvents.length - 1]) {
+        if (!lastIsH1 && lastIsH1s[lastIsH1s.length - 1]) {
             // If just clicked off a h1
 
             // @ts-ignore
@@ -122,20 +135,20 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
                 {line: h1Line, ch: 0},
                 {line: codemirror.doc.lineCount(), ch:0}
             );
-            const formerSectionValue = codemirror.doc.children[0].lines.map(l => l.text).join(`
-`)
-            saveSection(section._id, formerSectionValue)
+//             const formerSectionValue = codemirror.doc.children[0].lines.map(l => l.text).join(`
+// `)
+//             saveSection(section._id, formerSectionValue)
             
-            createSection(name, newBody)
+            createSection(name, newBody, section._id)
 
             setH1Line(null);
-            setLastEvent(false); // should alr b false doe
-            setLastEvents([])
+            setLastIsH1(false); // should alr b false doe
+            setLastIsH1s([])
         } else {
-            setLastEvents(p => [...p, lastEvent])
+            setLastIsH1s(p => [...p, lastIsH1])
         }
 
-    }, [lastEvent])
+    }, [lastIsH1])
     // createSection and saveSection should never change bc they're static functions
     // h1line only changes in 1 place and that's also where lastEvent changes.
     // lastEvents doesn't change except for inside this useEffect. if i include it in the dependency array, it might cause infinite calling?
@@ -159,18 +172,43 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
                             }
                             else if (e.key === "ArrowDown" || e.key === "Enter") {
                                 e.preventDefault()
-                                if (editingTitleValue.substr(0, 2) === "# ") {
-                                    axios.post("/api/section", {id: section._id, name: editingTitleValue.substr(2, editingTitleValue.length - 1)})
+                                if (editingTitleValue.substring(0, 2) === "# ") {
+                                    axios.post("/api/section", {id: section._id, name: editingTitleValue.substring(2)})
                                     .then(res => setIter(prevIter => prevIter + 1)) 
                                     .catch(handleError)
                                     .finally(() => setEditingTitleValue(null))
                                 } else {
                                     // Delete section and append its body onto the previous section's body.
+                                    const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+                                    const prevSectionId = sectionsOrder[thisSectionIdx - 1]
+
+                                    let newBody = ""
+                                    newBody += `
+
+`
+                                    newBody += "# " + section.name
+                                    newBody += `
+
+                                    `
+                                    newBody += "# " + section.body
+
+                                    // axios.post("/api/section", {id: prevSectionId, body:})
                                 }
                                 // @ts-ignore
                                 editorRef.current.simpleMde.codemirror.focus()
                             } else if (e.key === "ArrowUp") {
-                                // Open the section above this section
+                                // Save name and open the section above this section
+                                axios.post("/api/section", {id: section._id, name: editingTitleValue.substring(2)})
+                                    .then(res => setIter(prevIter => prevIter + 1)) 
+                                    .catch(handleError)
+                                    .finally(() => setEditingTitleValue(null))
+                                const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+                                const prevSectionId = sectionsOrder[thisSectionIdx - 1]
+                                setOpenSectionId(prevSectionId)
+                                axios.post("/api/file", {id: fileId, lastOpenSection: prevSectionId})
+                                    .then(res => setIter(prevIter => prevIter + 1))
+                                    .catch(handleError)
+                                
                             }
                         }}
                     />
@@ -195,7 +233,6 @@ const Editor = ({section, isOpen, createSection, handleError, handleSectionOnCli
             }}
             openState={isOpen}
         >
-            {/* <Editor value={body} setValue={setBody} createSection={createSection} saveSection={(body: string) => saveSection(section._id, body)}/> */}
             <SimpleMDE
                 ref={editorRef}
                 onChange={setBody}

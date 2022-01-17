@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
 import { FileModel } from "../../models/File";
 import { SectionModel } from "../../models/Section";
+import cleanForJSON from "../../utils/cleanForJSON";
 import dbConnect from "../../utils/dbConnect";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -40,12 +41,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const savedSection = await newSection.save();
                     
                     thisFile.lastOpenSection = savedSection._id;
+
+                    if (req.body.previousFileId) {
+                        // Insert savedSection._id after req.body.previousFileId in thisFile.sectionsOrder
+                        const prevFileIdx = thisFile.sectionsOrder.findIndex(id => id.toString() === req.body.previousFileId)
+                        thisFile.sectionsOrder.splice(prevFileIdx + 1, 0, savedSection._id);
+
+                    } else {
+                        thisFile.sectionsOrder.push(savedSection._id)
+                    }
                     await thisFile.save();
                     
-                    return res.status(200).json({message: "Section created! ✨", id: savedSection._id.toString(), body: savedSection.body});
+                    return res.status(200).json({message: "Section created! ✨", id: savedSection._id.toString()});
                 }            
             } catch (e) {
-                return res.status(500).json({message: e});            
+                return res.status(500).json({message: e});
             }
         }
         

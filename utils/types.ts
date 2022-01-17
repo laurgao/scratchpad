@@ -9,6 +9,7 @@ export interface FileObj {
     name: string; 
     folder: string; 
     lastOpenSection: string;
+    sectionsOrder: string[];
 }
 
 export interface SectionObj {
@@ -27,6 +28,10 @@ export interface FileObjGraph extends FileObj {
 }
 
 export interface FolderObjGraph extends FolderObj {
+    fileArr: DatedObj<FileObj>[],
+}
+
+export interface FolderObjGraphWithSections extends FolderObj {
     fileArr: DatedObj<FileObjGraph>[],
 }
 

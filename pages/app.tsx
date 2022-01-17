@@ -14,8 +14,7 @@ import Accordion from "react-robust-accordion";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
 import Container from "../components/Container";
-import Editor from "../components/Editor";
-import H2 from "../components/H2";
+import FileWithSections from "../components/FileWithSections";
 import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
 import Modal from "../components/Modal";
@@ -28,7 +27,7 @@ import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
-import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
+import { DatedObj, FileObjGraph, FolderObjGraph, FolderObjGraphWithSections, UserObj } from "../utils/types";
 import { A } from "./index";
 
 
@@ -46,20 +45,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [openSectionId, setOpenSectionId] = useState<string>(props.lastOpenedFile.lastOpenSection);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
-    const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) 
-        ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) 
-        : null
 
     // Object creation/deletion
     const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [newFileName, setNewFileName] = useState<string>(dateFileName);
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
-    const [newSectionName, setNewSectionName] = useState<string>("");
-    const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
-
-    // Saving
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
@@ -96,14 +88,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         if (currentIsOpen) setOpenFolderId("");
         else setOpenFolderId(folderId);
     }
-    const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
-        if (currentIsOpen) {
-            setOpenSectionId(null);
-        } else {
-            setOpenSectionId(object._id);
-            // setSectionBody(object.body || "")
-        }
-    }
     function createNewFolder() {
         if (!newFileName) setNewFileName("Untitled folder");
 
@@ -130,7 +114,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 setIter(iter + 1);
                 setNewFileName(dateFileName);
                 setOpenFileId(res.data.id);
-                setOpenSectionId(res.data.createdSectionId);
+                // setOpenSectionId(res.data.createdSectionId);
                 // setSectionBody("");
             }
         }).catch(handleError);
@@ -140,23 +124,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         if (!openFolderId) createNewFolder()
         else createNewFile()
         setIsNewFolder(false);
-    }
-
-    function createSection(name?: string, body?: string) {
-        axios.post("/api/section", {
-            file: openFile._id,
-            name: name || "",
-            body: body || "",
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setOpenSectionId(res.data.id);
-                // setSectionBody(res.data.body || "");
-                setNewSectionName("");
-            }
-        }).catch(handleError).finally(() => setIsCreateNewSection(false));
     }
 
     function deleteFile(fileId: string, type: "file" | "folder" = "file") {
@@ -318,8 +285,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                         onClick={() => {
                                             setOpenFileId(file._id);
                                             updateLastOpenedFile(file._id);
-                                            let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
-                                            setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
+                                            // let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
+                                            // setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
                                             // setSectionBody(nextOpenSection ? nextOpenSection.body : "")
                                         }}
                                     >{file.name}</p>
@@ -351,56 +318,12 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     <p className="text-red-500 font-bold text-center mb-8">{error}</p>
                 )}
                 {(openFileId) ? 
-                    <>
-                    {/* File title */}
-                    <div className="mb-4">
-                        {openFile ? <H2>{openFile.name}</H2> : <div className="mx-auto w-full md:w-52 overflow-x-hidden"><Skeleton height={36}/></div>}
-                    </div>
-                    {/* File sections */}
-                    <div className="text-base text-gray-400">
-                        {openFile && <div className="flex flex-col">
-                            {isCreateNewSection ? (
-                                <div className="mb-4">
-                                    <Input 
-                                        value={newSectionName}
-                                        setValue={setNewSectionName}
-                                        id="new-section"
-                                        placeholder="New section name"
-                                        onKeyDown={e => {
-                                            if (e.key === "Enter") createSection(newSectionName)
-                                            else if (e.key === "Escape") {
-                                                setIsCreateNewSection(false);
-                                                setNewSectionName("");
-                                            }
-                                        }}
-                                    />
-                                    {!!newSectionName && <p className="text-xs">Enter to save<br/>Esc to exit</p>}
-                                </div>
-                            ) : (
-                                <Button onClick={() => {
-                                    setIsCreateNewSection(true);
-                                    waitForEl("new-section");
-                                }} className="ml-auto"><FaPlus size={10}/></Button>
-                            )}
-                            <hr/>
-                        </div>}
-                        {openFile && openFile.sectionArr.map(s => {
-                            const thisSectionIsOpen = openSectionId == s._id
-                            return (
-                                <Editor
-                                    key={s._id} 
-                                    section={s} 
-                                    isOpen={thisSectionIsOpen}
-                                    handleSectionOnClickAccordion={handleSectionOnClickAccordion}
-                                    createSection={createSection}
-                                    handleError={handleError}
-                                    fileId={openFileId}
-                                    setIter={setIter}
-                                />
-                            )
-                        })}
-                    </div>
-                    </> : <div className="flex items-center justify-center text-center h-1/2">
+                    <FileWithSections
+                        fileId={openFileId}
+                        openSectionId={openSectionId}
+                        setOpenSectionId={setOpenSectionId}
+                        handleError={handleError}
+                    /> : <div className="flex items-center justify-center text-center h-1/2">
                         <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                     </div>
                 }
@@ -410,7 +333,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
 
         </Container>
-        <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)} folders={folders}/>
+        <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)}/>
 
 
         </>
@@ -418,7 +341,8 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 }
 
 
-export const SettingsModal = ({isOpen, onRequestClose, folders}: {isOpen: boolean, onRequestClose: () => any, folders: FolderObjGraph[]}) => {
+export const SettingsModal = ({isOpen, onRequestClose}: {isOpen: boolean, onRequestClose: () => any}) => {
+    const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraphWithSections>[]}, any> = useSWR(`/api/folder?includeSections=${true}`, fetcher);
     const [session, loading] = useSession();
     const [error, setError] = useState<string>(null);
     const [isLoading, setIsLoading] = useState<boolean>(null);
@@ -431,39 +355,39 @@ export const SettingsModal = ({isOpen, onRequestClose, folders}: {isOpen: boolea
             
             <PrimaryButton 
                 isLoading={isLoading}
-                disabled={!folders}
+                disabled={!(foldersData && foldersData.data)}
                 onClick={() => {
                     try {
-                        setIsLoading(true);
-                        setError(null);
-                        var zip = new JSZip();
+                        if (foldersData && foldersData.data) {
+                            setIsLoading(true);
+                            setError(null);
+                            var zip = new JSZip();
 
-                        for (let folder of folders) {
-                            var thisFolder = zip.folder(folder.name);
+                            for (let folder of foldersData.data) {
+                                var thisFolder = zip.folder(folder.name);
 
-                            for (let file of folder.fileArr) {
-                                let markdownTextOfCombinedSections = "";
-                                for (let section of file.sectionArr) {
-                                    markdownTextOfCombinedSections += "# " + (section.name || "")
-                                    markdownTextOfCombinedSections += `
----
-
-`
-                                    markdownTextOfCombinedSections += section.body || ""
-                                    markdownTextOfCombinedSections += `
+                                for (let file of folder.fileArr) {
+                                    let markdownTextOfCombinedSections = "";
+                                    for (let section of file.sectionArr) {
+                                        markdownTextOfCombinedSections += "# " + (section.name || "")
+                                        markdownTextOfCombinedSections += `
+    `
+                                        markdownTextOfCombinedSections += section.body || ""
+                                        markdownTextOfCombinedSections += `
 
 
-`
+    `
+                                    }
+                                    thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                                 }
-                                thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                             }
-                        }
 
-                        zip.generateAsync({type:"blob"})
-                        .then(function(content) {
-                            saveAs(content, "scratchpad-data.zip");
-                        })
-                        .finally(() => setIsLoading(false));
+                            zip.generateAsync({type:"blob"})
+                            .then(function(content) {
+                                saveAs(content, "scratchpad-data.zip");
+                            })
+                            .finally(() => setIsLoading(false));
+                        }
 
                     } catch(e) {
                         setIsLoading(false);

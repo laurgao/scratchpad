@@ -14,6 +14,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {    
                 await dbConnect();   
                 const thisUser = await UserModel.findOne({email: session.user.email})
+
+                let lookup = [];
+                if (req.body.includeSections) {
+                    lookup.push({
+                        $lookup: {
+                            from: "sections",
+                            localField: "_id", // File field
+                            foreignField: "file", //  Section field
+                            as: "sectionArr",
+                        }
+                    });
+                }
             
                 const thisObject = await FolderModel.aggregate([
                     {$match: {user: thisUser._id}},
@@ -24,14 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         let: {"folder": "$_id"}, // Local field (folder field)
                         pipeline: [
                             {$match: {$expr: {$and: [{$eq: ["$folder", "$$folder"]}, ]}}},
-                            {
-                                $lookup: {
-                                    from: "sections",
-                                    localField: "_id", // File field
-                                    foreignField: "file", //  Section field
-                                    as: "sectionArr",
-                                }
-                            },
+                            ...lookup,
                             {$sort: {createdAt: -1}}
                         ],
                         as: "fileArr",
