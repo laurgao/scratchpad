@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import { FaPlus } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
-import { DatedObj, FileObjGraph, SectionObj } from "../utils/types";
-import H2 from "./H2";
 import useSWR, { SWRResponse } from "swr";
 import fetcher from "../utils/fetcher";
-import Input from "./Input";
-import axios from "axios";
-import Button from "./Button";
-import { FaPlus } from "react-icons/fa";
 import { waitForEl } from "../utils/key";
+import { DatedObj, FileObjGraph } from "../utils/types";
+import Button from "./Button";
 import Editor from "./Editor";
+import H2 from "./H2";
+import Input from "./Input";
 
 const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}) => {
     // Data fetching & management
@@ -19,6 +19,8 @@ const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}
     useEffect(() => {if (fileData && fileData.data) setFile(fileData.data)}, [fileData])
 
     useEffect(() => {
+        // For initiating opensectionId when compomponent mounts +
+        // if file.lastOpenSection is changed inside Editor when current open section is deleted
         if (!!fileData && !!fileData.data) setOpenSectionId(fileData.data.lastOpenSection)
     }, [!!fileData && !!fileData.data, fileData])
 

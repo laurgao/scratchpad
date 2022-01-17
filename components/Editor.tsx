@@ -1,12 +1,12 @@
 import axios from "axios";
-import { FaAngleDown, FaAngleLeft } from "react-icons/fa";
-import Accordion from "react-robust-accordion";
 import "easymde/dist/easymde.min.css";
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import { FaAngleDown, FaAngleLeft } from "react-icons/fa";
+import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
-import Input from "./Input";
 import { waitForEl } from "../utils/key";
 import { DatedObj, SectionObj } from "../utils/types";
+import Input from "./Input";
 
 const AUTOSAVE_INTERVAL = 1000
 
@@ -31,6 +31,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     const [body, setBody] = useState<string>(section.body);
 
     useEffect(() => {
+        // If section.body gets modified by another section, like when the section below it is deleted
         if (isSaved && body !== section.body) { 
             setBody(section.body)
             setIsSaved(true)
@@ -42,6 +43,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
         if (x && x.length > 0) x[x.length - 1].innerHTML = isSaved ? "Saved" : "Saving..."
     }, [isSaved])
 
+    // MAIN AUTOSAVE INTERVAL
     useEffect(() => {
         const interval = setInterval(() => {
             if (!isSaved) saveSection(section._id, body)
@@ -86,6 +88,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     const [h1Line, setH1Line] = useState<number>(null)
     const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
     const [initiateEditingTitleValue, setInitiateEditingTitleValue] = useState<boolean>(false)
+    const [shouldGoToSectionBelow, setShouldGoToSectionBelow] = useState<boolean>(false);
     
     const events = useMemo(() => ({
         cursorActivity: (instance) => {
@@ -104,10 +107,20 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
             setLastIsH1(isH1)
             if (isH1) setH1Line(cursorInfo.line)
 
-            if (cursorInfo.line === 0 && event.key === "ArrowUp") setInitiateEditingTitleValue(true)
+            const willEditTitle = cursorInfo.line === 0 && 
+                (event.key === "ArrowUp" || cursorInfo.ch === 0 && event.key === "Backspace" )
+            if (willEditTitle) setInitiateEditingTitleValue(true)
+
+            else if (event.key === "ArrowDown" && cursorInfo.line === instance.doc.lineCount() - 1) {
+                setShouldGoToSectionBelow(true)
+            }
+        },
+        blur: (instance) => {
+            setLastIsH1(false)
         }
     }), [])
 
+    // SET IS EDITING SECTION NAME
     useEffect(() => {
         // Because if section.name changes calling this function in the useMemo will not take the new section.name into account
         // even if it's in the dep array
@@ -118,6 +131,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
         }
     }, [initiateEditingTitleValue, section.name, section._id])
 
+    // CREATE NEW SECTION FROM H1
     useEffect(() => {
         if (!lastIsH1 && lastIsH1s[lastIsH1s.length - 1]) {
             // If just clicked off a h1
@@ -199,8 +213,9 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
             // This is rlly jank
             axios.post("/api/section", {id: prevSectionId, addBody: addBody})
                 .then(res => {
+                    // Setting opensectionid not needed bc it gets updated in FileWithSections' useEffect
+                    // but ima keep it anyway bc idk insecure
                     setOpenSectionId(prevSectionId);
-                    // setIter(prevIter => prevIter + 1);
                     setEditingTitleValue(null);
                 })
                 .catch(handleError)
@@ -212,7 +227,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
                 })
                 .catch(handleError)
 
-            // Update fle.lastOpenSection
+            // Update file.lastOpenSection
             axios.post("/api/file", { id: fileId, lastOpenSection: prevSectionId })
             .then(res => {
                 console.log(res.data.message)
@@ -221,6 +236,19 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
             .catch(handleError)
         }
     }
+
+    // Go to section below
+    useEffect(() => {
+        if (shouldGoToSectionBelow) {
+            const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+            const belowSectionId = sectionsOrder[thisSectionIdx + 1]
+            setOpenSectionId(belowSectionId)
+            axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
+                .then(res => setIter(prevIter => prevIter + 1))
+                .catch(handleError)
+            setShouldGoToSectionBelow(false)
+        }
+    }, [shouldGoToSectionBelow, sectionsOrder])
 
     return (
         <>
