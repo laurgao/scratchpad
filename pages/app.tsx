@@ -84,9 +84,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     });
 
     function createNewFolder() {
-        if (!newFileName) setNewFileName("Untitled folder");
-
-        axios.post("/api/folder", {name: newFileName,})
+        axios.post("/api/folder", {name: newFileName || "Untitled folder",})
             .then(res => {
                 if (res.data.error) handleError(res.data.error)
                 else {
@@ -99,7 +97,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     }
 
     function createNewFile() {
-        axios.post("/api/file", {name: newFileName, folder: openFolderId})
+        axios.post("/api/file", {name: newFileName || "Untitled file", folder: openFolderId})
             .then(res => {
                 if (res.data.error) handleError(res.data.error);
                 else {
@@ -363,12 +361,13 @@ export const SettingsModal = ({isOpen, onRequestClose}: {isOpen: boolean, onRequ
                                     for (let section of file.sectionArr) {
                                         markdownTextOfCombinedSections += "# " + (section.name || "")
                                         markdownTextOfCombinedSections += `
-    `
+
+`
                                         markdownTextOfCombinedSections += section.body || ""
                                         markdownTextOfCombinedSections += `
 
 
-    `
+`
                                     }
                                     thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
                                 }
