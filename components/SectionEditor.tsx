@@ -6,11 +6,12 @@ import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
 import { waitForEl } from "../utils/key";
 import { DatedObj, SectionObj } from "../utils/types";
+import { SectionKwargsObj } from "./FileWithSections";
 import Input from "./Input";
 
 const AUTOSAVE_INTERVAL = 1000
 
-const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder, setOpenSectionId, handleError}: {
+const SectionEditor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder, setOpenSectionId, sectionKwargs, setSectionKwargs, handleError}: {
     section: DatedObj<SectionObj>,
     isOpen: boolean,
     setIter: Dispatch<SetStateAction<number>>,
@@ -18,12 +19,39 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     sectionsOrder: string[],
     setOpenSectionId: Dispatch<SetStateAction<string>>,
     createSection: (name: string, body: string, previousFileId?: string) => any,
+    sectionKwargs: SectionKwargsObj,
+    setSectionKwargs: Dispatch<SetStateAction<SectionKwargsObj>>,
     handleError: (e: Error) => void,
 }) => {
     const editorRef = useRef();
+    const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
+
     useEffect(() => {
-        // @ts-ignore
-        if (isOpen && !editingTitleValue) editorRef.current.simpleMde.codemirror.focus()
+        if (isOpen && !editingTitleValue) {
+            if (sectionKwargs && sectionKwargs.sectionId === section._id) {
+                // Run kwargs when section opens
+                if (sectionKwargs.condition === "initiate-with-cursor-on-bottom") {
+                    // @ts-ignore
+                    const codemirror = editorRef.current.simpleMde.codemirror;
+                    codemirror.focus()
+                    const lowestLine = codemirror.doc.lineCount() - 1
+                    const rightMostChar = codemirror.doc.getLine(lowestLine).length;
+                    codemirror.setCursor({line: lowestLine, ch: rightMostChar})
+
+                } else if (sectionKwargs.condition === "initiate-on-editing-title") {
+                    setEditingTitleValue("# " + section.name);
+                    waitForEl(`${section._id}-edit-section-title`);
+                }
+
+                setSectionKwargs(null);
+                
+            } else {
+                // When section opens, focus editor unless we're editing title.
+                // @ts-ignore
+                const codemirror = editorRef.current.simpleMde.codemirror;
+                codemirror.focus()
+            }
+        }
     }, [isOpen])
 
     // Autosave stuff
@@ -86,7 +114,6 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     const [lastIsH1, setLastIsH1] = useState<boolean>(false)
     const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
     const [h1Line, setH1Line] = useState<number>(null)
-    const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
     const [initiateEditingTitleValue, setInitiateEditingTitleValue] = useState<boolean>(false)
     const [shouldGoToSectionBelow, setShouldGoToSectionBelow] = useState<boolean>(false);
     
@@ -154,9 +181,6 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
                 {line: h1Line, ch: 0},
                 {line: codemirror.doc.lineCount(), ch:0}
             );
-//             const formerSectionValue = codemirror.doc.children[0].lines.map(l => l.text).join(`
-// `)
-//             saveSection(section._id, formerSectionValue)
             
             createSection(name, newBody, section._id)
 
@@ -245,6 +269,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
             const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
             if (thisSectionIdx < sectionsOrder.length - 1) {
                 const belowSectionId = sectionsOrder[thisSectionIdx + 1]
+                setSectionKwargs({sectionId: belowSectionId, condition: "initiate-on-editing-title"})
                 setOpenSectionId(belowSectionId)
                 axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
                     .then(res => setIter(prevIter => prevIter + 1))
@@ -283,6 +308,7 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
                                     // Save name and open the section above this section
                                     saveSectionName();
                                     const prevSectionId = sectionsOrder[thisSectionIdx - 1]
+                                    setSectionKwargs({sectionId: prevSectionId, condition: "initiate-with-cursor-on-bottom"})
                                     setOpenSectionId(prevSectionId)
                                     axios.post("/api/file", {id: fileId, lastOpenSection: prevSectionId})
                                         .then(res => setIter(prevIter => prevIter + 1))
@@ -341,4 +367,4 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     )
 }
 
-export default Editor
+export default SectionEditor

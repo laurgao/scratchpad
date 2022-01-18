@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaPlus } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import useSWR, { SWRResponse } from "swr";
@@ -7,9 +7,14 @@ import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
 import { DatedObj, FileObjGraph } from "../utils/types";
 import Button from "./Button";
-import Editor from "./Editor";
 import H2 from "./H2";
 import Input from "./Input";
+import SectionEditor from "./SectionEditor";
+
+export interface SectionKwargsObj {
+    sectionId: string,
+    condition: "initiate-on-editing-title" | "initiate-with-cursor-on-bottom",
+};
 
 const FileWithSections = ({fileId, handleError}: {
     fileId: string,
@@ -30,6 +35,10 @@ const FileWithSections = ({fileId, handleError}: {
 
     const [newSectionName, setNewSectionName] = useState<string>("");
     const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
+
+    // Used for passing information between sections
+    // SectionEditor will run functions on open depending on sectionkwargs and will set sectionkwargs as null right after.
+    const [sectionKwargs, setSectionKwargs] = useState<SectionKwargsObj>(null);
     
     function createSection(name?: string, body?: string, previousFileId?: string) {
         axios.post("/api/section", {
@@ -88,7 +97,7 @@ const FileWithSections = ({fileId, handleError}: {
             {(file) && file.sectionArr.map(s => {
                 const thisSectionIsOpen = openSectionId == s._id
                 return (
-                    <Editor
+                    <SectionEditor
                         key={s._id} 
                         section={s} 
                         isOpen={thisSectionIsOpen}
@@ -98,6 +107,8 @@ const FileWithSections = ({fileId, handleError}: {
                         setIter={setIter}
                         setOpenSectionId={setOpenSectionId}
                         sectionsOrder={file.sectionsOrder}
+                        sectionKwargs={sectionKwargs}
+                        setSectionKwargs={setSectionKwargs}
                     />
                 )
             })}

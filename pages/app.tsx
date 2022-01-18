@@ -306,14 +306,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 {error && (
                     <p className="text-red-500 font-bold text-center mb-8">{error}</p>
                 )}
-                {(openFileId) ? 
-                    <FileWithSections
-                        fileId={openFileId}
-                        handleError={handleError}
-                    /> : <div className="flex items-center justify-center text-center h-1/2">
+                {openFileId ? (
+                    <FileWithSections fileId={openFileId} handleError={handleError}/> 
+                ) : (
+                    <div className="flex items-center justify-center text-center h-1/2">
                         <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                     </div>
-                }
+                )}
             </div>
             <div className="w-12 flex items-end justify-center bg-gray-100">
                 <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-400" size={20}/></Button>
