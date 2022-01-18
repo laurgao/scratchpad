@@ -1,37 +1,34 @@
+import { Dispatch, SetStateAction } from "react";
 import H3 from "./H3";
 
-const Input = ({name, value, setValue, type="text", id="", placeholder="", onChange, onKeyDown=null, className=""} : {
-    name?: string,
-    value: string,
-    setValue?: any,
-    onChange?: () => any, // you need one of setValue and onChange
-    type?: "text"|"textarea"|"date",
-    id?: string,
-    placeholder?: string,
-    onKeyDown?: (e) => any,
-    className?: string,
-}) => {
+type InputProps = React.HTMLProps<HTMLInputElement> 
+& {setValue?: Dispatch<SetStateAction<string>>, type?: "text"|"textarea"|"date", name?: string};
+
+const Input = (props: InputProps) => {
+    const newProps = {...props}
+    delete newProps.setValue
+    delete newProps.className
+    delete newProps.name
+    delete newProps.type
     return (
-        <div className={className}>
-            {name && <H3>{name}</H3>}
-            {(type == "text" || type == "date") && <input
-                type={type}
-                className="border-b w-full content my-2 py-2 bg-transparent"
-                placeholder={placeholder}
-                value={value}
-                id={id}
-                onChange={onChange ? onChange : e => setValue(e.target.value)}
-                onKeyDown={onKeyDown}
-            />}
-            {type == "textarea" && <textarea
-                className="border-b w-full content my-2 py-2 text-gray-500 bg-transparent"
-                rows={7}
-                placeholder={placeholder}
-                value={value}
-                id={id}
-                onChange={onChange ? onChange : e => setValue(e.target.value)}
-                onKeyDown={onKeyDown}
-            />}
+        <div className={props.className}>
+            {props.name && <H3>{props.name}</H3>}
+            {props.type !== "textarea" ? (
+                <input
+                    {...newProps}
+                    type={props.type}
+                    className="border-b w-full content my-2 py-2 bg-transparent"
+                    onChange={props.onChange ? props.onChange : e => props.setValue(e.target.value)}
+                />
+            ) : (
+                <textarea
+                    {...newProps}
+                    className="border-b w-full content my-2 py-2 text-gray-500 bg-transparent"
+                    rows={7}
+                    // @ts-ignore
+                    onChange={props.onChange ? props.onChange : e => props.setValue(e.target.value)}
+                />
+            )}
         </div>
     )
 }

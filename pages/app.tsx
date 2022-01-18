@@ -1,20 +1,20 @@
 import axios from "axios";
 import { format } from "date-fns";
-import "easymde/dist/easymde.min.css";
+import { saveAs } from 'file-saver';
+import JSZip from "jszip";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
-import { getSession } from "next-auth/client";
+import { getSession, signOut, useSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
-import { FaAngleDown, FaAngleLeft, FaAngleRight, FaPlus } from "react-icons/fa";
-import { FiTrash } from "react-icons/fi";
+import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
+import { FiSettings, FiTrash } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import Accordion from "react-robust-accordion";
-import SimpleMDE from "react-simplemde-editor";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
 import Container from "../components/Container";
-import H2 from "../components/H2";
+import FileWithSections from "../components/FileWithSections";
 import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
 import Modal from "../components/Modal";
@@ -27,9 +27,9 @@ import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
-import { DatedObj, FileObjGraph, FolderObjGraph, SectionObj, UserObj } from "../utils/types";
+import { DatedObj, FileObjGraph, FolderObjGraph, FolderObjGraphWithSections, UserObj } from "../utils/types";
+import { A } from "./index";
 
-const AUTOSAVE_INTERVAL = 1000
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
     // App lifecycle
@@ -42,76 +42,26 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
     // Current opened items
-    const [openSectionId, setOpenSectionId] = useState<string>(null);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
-    const openFile: DatedObj<FileObjGraph> = (folders && folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0)) 
-        ? folders.find(folder => folder.fileArr.filter(file => file._id === openFileId).length !== 0).fileArr.find(file => file._id === openFileId) 
-        : null
 
     // Object creation/deletion
     const dateFileName = format(new Date(), "yyyy-MM-dd");
     const [newFileName, setNewFileName] = useState<string>(dateFileName);
     const [isNewFolder, setIsNewFolder] = useState<boolean>(false);
-    const [newSectionName, setNewSectionName] = useState<string>("");
-    const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
     const [toDeleteItem, setToDeleteItem] = useState<any>(null);
     const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
 
-    // Saving
-    const [sectionBody, setSectionBody] = useState<string>("");
-    const [isSaved, setIsSaved] = useState<boolean>(true);
-
+    const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
-    const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 97px)" : "calc(100vh - 53px)"
-    const handleError = (e) => {
+    const mainContainerHeight = (openFileId) ? "calc(100vh - 44px)" : "100vh"
+    const handleError = (e: Error) => {
         console.log(e);
         setError(e.message);
     }
 
-    useEffect(() => {
-        let firstOpenSection = (props.lastOpenedFile && props.lastOpenedFile.sectionArr) 
-            ? props.lastOpenedFile.sectionArr.find(d => d._id === props.lastOpenedFile.lastOpenSection) 
-            : null
-        // setOpenSection(firstOpenSection)
-        setOpenSectionId(props.lastOpenedFile.lastOpenSection)
-        setSectionBody(firstOpenSection ? firstOpenSection.body : "")
-    }, [])
-
-    useEffect(() => {if (openFileId && openSectionId) setIsSaved(false); }, [sectionBody])  
-
-    useEffect(() => {
-        function saveFile(id, value) {
-            console.log("saving...")
-
-            axios.post("/api/section", {
-                id: id,
-                body: value,
-            }).then(res => {
-                if (res.data.error) handleError(res.data.error);
-                else {
-                    console.log(res.data.message);
-                    setIsSaved(true);
-                    setIter(iter + 1);
-                }
-            }).catch(handleError);
-        }
-
-        const interval = setInterval(() => {
-            if (openSectionId && !isSaved) saveFile(openSectionId, sectionBody)
-            
-        }, AUTOSAVE_INTERVAL);
-
-        return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-    }, [sectionBody, isSaved])
-
-    useEffect(() => {setIsSaved(true);}, [openFileId])
     const updateLastOpenedFile = (fileId) => axios.post("/api/user", {lastOpenedFile: fileId || ""}).then(res => console.log(res.data.message)).catch(handleError)
     useEffect(() => {if (foldersData && foldersData.data) setFolders(foldersData.data)}, [foldersData])
-    useEffect(() => {
-        const x = document.getElementsByClassName("autosave")
-        if (x && x.length > 0) x[x.length - 1].innerHTML = isSaved ? "Saved" : "Saving..."
-    }, [isSaved])
 
     function onCreateNewFolder() {
         if (!openFolderId) setNewFileName("");
@@ -132,49 +82,31 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         return () => Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
     });
 
-
-    const handleTextOnClick = (event: any, folderId: string, currentIsOpen: boolean) => {
-        if (currentIsOpen) setOpenFolderId("");
-        else setOpenFolderId(folderId);
-    }
-    const handleSectionOnClickAccordion = (event: any, object: DatedObj<SectionObj>, currentIsOpen: boolean) => {
-        if (currentIsOpen) {
-            setOpenSectionId(null);
-        } else {
-            setOpenSectionId(object._id);
-            setSectionBody(object.body || "")
-        }
-    }
     function createNewFolder() {
-        if (!newFileName) setNewFileName("Untitled folder");
-
-        axios.post("/api/folder", {
-            name: newFileName,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error)
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setNewFileName(dateFileName);
-            }
-        }).catch(handleError);
+        axios.post("/api/folder", {name: newFileName || "Untitled folder",})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error)
+                else {
+                    console.log(res.data.message);
+                    setIter(iter + 1);
+                    setNewFileName(dateFileName);
+                }
+            })
+            .catch(handleError);
     }
 
     function createNewFile() {
-        axios.post("/api/file", {
-            name: newFileName,
-            folder: openFolderId,
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                setIter(iter + 1);
-                setNewFileName(dateFileName);
-                setOpenFileId(res.data.id);
-                setOpenSectionId(res.data.createdSectionId);
-                setSectionBody("");
-            }
-        }).catch(handleError);
+        axios.post("/api/file", {name: newFileName || "Untitled file", folder: openFolderId})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    setIter(iter + 1);
+                    setNewFileName(dateFileName);
+                    setOpenFileId(res.data.id);
+                }
+            })
+            .catch(handleError);
     }
 
     function onSubmit() {
@@ -186,26 +118,25 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     function deleteFile(fileId: string, type: "file" | "folder" = "file") {
         setIsLoading(true);
 
-        axios.delete(`/api/${type}`, {
-            data: {
-                id: fileId,
-            },
-        }).then(res => {
-            if (res.data.error) handleError(res.data.error);
-            else {
-                console.log(res.data.message);
-                if (type === "file" && openFileId === fileId) {
-                    setOpenFileId("");
-                    updateLastOpenedFile("");
+        axios.delete(`/api/${type}`, { data: { id: fileId }})
+            .then(res => {
+                if (res.data.error) handleError(res.data.error);
+                else {
+                    console.log(res.data.message);
+                    if (type === "file" && openFileId === fileId) {
+                        setOpenFileId("");
+                        updateLastOpenedFile("");
+                    }
+                    if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
+                        setOpenFileId("");
+                        updateLastOpenedFile("");
+                    }
+                    setToDeleteItem(null);
+                    setIter(iter + 1);
                 }
-                if (type === "folder" && toDeleteItem.fileArr.find(f => f._id === openFileId)) {
-                    setOpenFileId("");
-                    updateLastOpenedFile("");
-                }
-                setToDeleteItem(null);
-                setIter(iter + 1);
-            }
-        }).catch(handleError).finally(() => setIsLoading(false));
+            })
+            .catch(handleError)
+            .finally(() => setIsLoading(false));
     }    
 
     const RightClickMenu = ({file, x=0, y=0}) => {
@@ -282,26 +213,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             >
                 <div className="text-xs text-gray-400 my-4">
                     {isNewFolder ? (
-                        <>
-                        <Input 
-                            value={newFileName}
-                            setValue={setNewFileName}
-                            type="text"
-                            placeholder={`${!openFolderId ? "Folder" : "File"} name`}
-                            id="new-file"
-                            className="text-base text-black"
-                            onKeyDown={e => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    onSubmit();
-                                } else if (e.key === "Escape") {
-                                    e.preventDefault();
-                                    setIsNewFolder(false);
-                                }
-                            }}
-                        />
-                        {!!newFileName && <p>Enter to save<br/>Esc to exit</p>}
-                        </>
+                        <p className={(newFileName && openFolderId) ? "" : "invisible"}>Enter to save<br/>Esc to exit</p>
                     ) : (
                         <Button 
                             childClassName="flex items-center"
@@ -330,133 +242,159 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                                 </div>
                             } 
                             open={true}
-                            setOpenState={(event) => handleTextOnClick(event, folder._id, openFolderId == folder._id)}
+                            setOpenState={(event) => {
+                                // Handle only allowing 1 folder open at a time
+                                if (openFolderId === folder._id) setOpenFolderId("");
+                                else setOpenFolderId(folder._id);
+                            }}
                             openState={openFolderId == folder._id}
                         >
-                            <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">{folder.fileArr && folder.fileArr.map(file => 
-                                <div key={file._id}>
-                                    <p 
-                                        className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
-                                        onContextMenu={(e) => {
-                                            e.preventDefault()
-                                            setToDeleteItemForRightClick([file, e.pageX, e.pageY])
-                                        }} 
-                                        onClick={() => {
-                                            setOpenFileId(file._id);
-                                            updateLastOpenedFile(file._id);
-                                            let nextOpenSection = file.sectionArr ? file.sectionArr.find(d => d._id === file.lastOpenSection) : null
-                                            setOpenSectionId(nextOpenSection ? nextOpenSection._id : "")
-                                            setSectionBody(nextOpenSection ? nextOpenSection.body : "")
-                                        }}
-                                    >{file.name}</p>
-                                </div>
-                            )}</div>
+                            <div className="text-base text-gray-500 mb-2 ml-5 mt-1 overflow-x-visible">
+                                {(folder._id === openFolderId && isNewFolder) && (
+                                    <div className="px-2 py-1">
+                                        <Input 
+                                            value={newFileName}
+                                            setValue={setNewFileName}
+                                            type="text"
+                                            placeholder="File name"
+                                            id="new-file"
+                                            className="text-base text-gray-500"
+                                            onKeyDown={e => {
+                                                if (e.key === "Enter") onSubmit()
+                                                else if (e.key === "Escape") setIsNewFolder(false)
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                {folder.fileArr && folder.fileArr.map((file, idx) => 
+                                    <div key={file._id}>
+                                        <p 
+                                            className={`cursor-pointer rounded-md px-2 py-1 ${openFileId == file._id && "bg-blue-400 text-white"}`} 
+                                            onContextMenu={(e) => {
+                                                e.preventDefault()
+                                                setToDeleteItemForRightClick([file, e.pageX, e.pageY])
+                                            }} 
+                                            onClick={() => {
+                                                setOpenFileId(file._id);
+                                                updateLastOpenedFile(file._id);
+                                            }}
+                                        >{file.name}</p>
+                                    </div>
+                                )}</div>
                         </Accordion>
                     </div>
+                )}
+                {(isNewFolder && !openFolderId) && (
+                    <>
+                    <Input 
+                        value={newFileName}
+                        setValue={setNewFileName}
+                        type="text"
+                        placeholder="Folder name"
+                        id="new-file"
+                        className="text-base text-gray-500"
+                        onKeyDown={e => {
+                            if (e.key === "Enter") onSubmit();
+                            else if (e.key === "Escape") setIsNewFolder(false);
+                        }}
+                    />
+                    {!!newFileName && <p className="text-xs text-gray-400">Enter to save<br/>Esc to exit</p>}
+                    </>
                 )}
             </ResizableRight>
             <div className="flex-grow px-10 overflow-y-auto pt-8">
                 {error && (
                     <p className="text-red-500 font-bold text-center mb-8">{error}</p>
                 )}
-                {(openFileId) ? 
-                    <>
-                    {/* File title */}
-                    <div className="mb-4">
-                        {openFile ? <H2>{openFile.name}</H2> : <div className="mx-auto w-full md:w-52 overflow-x-hidden"><Skeleton height={36}/></div>}
-                    </div>
-                    {/* File sections */}
-                    <div className="text-base text-gray-400">
-                        {openFile && <div className="flex flex-col">
-                            {isCreateNewSection ? (
-                                <div className="mb-4">
-                                    <Input 
-                                        value={newSectionName}
-                                        setValue={setNewSectionName}
-                                        id="new-section"
-                                        placeholder="New section name"
-                                        onKeyDown={e => {
-                                            if (e.key === "Enter") {
-                                                console.log("Making new section!");
-                                                axios.post("/api/section", {
-                                                    file: openFile._id,
-                                                    name: newSectionName,
-                                                }).then(res => {
-                                                    if (res.data.error) handleError(res.data.error);
-                                                    else {
-                                                        console.log(res.data.message);
-                                                        setIter(iter + 1);
-                                                        setOpenSectionId(res.data.id);
-                                                        setSectionBody("");
-                                                        setNewSectionName("");
-                                                    }
-                                                }).catch(handleError).finally(() => setIsCreateNewSection(false));
-                                            } else if (e.key === "Escape") {
-                                                setIsCreateNewSection(false);
-                                                setNewSectionName("");
-                                            }
-                                        }}
-                                    />
-                                    {!!newSectionName && <p className="text-xs">Enter to save<br/>Esc to exit</p>}
-                                </div>
-                            ) : (
-                                <Button onClick={() => {
-                                    setIsCreateNewSection(true);
-                                    waitForEl("new-section");
-                                }} className="ml-auto"><FaPlus size={10}/></Button>
-                            )}
-                            <hr/>
-                        </div>}
-                        {openFile && openFile.sectionArr.map(s => {
-                            const thisSectionIsOpen = openSectionId == s._id
-                            return (
-                                <>
-                                <Accordion
-                                    key={`${s._id}-0`}
-                                    label={
-                                        <div className="flex p-2 items-center" style={{height: "30px"}}>
-                                            <p>{s.name}</p>
-                                            {thisSectionIsOpen ? <FaAngleDown size={14} className="ml-auto"/> : <FaAngleLeft size={14} className="ml-auto"/>}
-                                        </div>
-                                    }                            
-                                    setOpenState={(event) => {
-                                        handleSectionOnClickAccordion(event, s, thisSectionIsOpen)
-                                        axios.post("/api/file", {
-                                            id: openFileId, 
-                                            lastOpenSection: thisSectionIsOpen ? "null" : s._id
-                                        }).then(res => {
-                                            console.log(res.data.message)
-                                            setIter(prevIter => prevIter + 1)
-                                        }).catch(handleError)
-                                    }}
-                                    openState={thisSectionIsOpen}
-                                >
-                                    <SimpleMDE
-                                        id={`hellosection-${s._id}`}
-                                        onChange={setSectionBody}
-                                        value={sectionBody}
-                                        options={{
-                                            spellChecker: false,
-                                            placeholder: "Unload your working memory ✨ ...",
-                                            toolbar: []
-                                        }}
-                                        className="text-lg"
-                                    />
-                                </Accordion>                        
-                                <hr key={`${s._id}-1`}/>
-                                </>
-                            )
-                        })}
-                    </div>
-                    </> : <div className="flex items-center justify-center text-center h-1/2">
+                {openFileId ? (
+                    <FileWithSections fileId={openFileId} handleError={handleError}/> 
+                ) : (
+                    <div className="flex items-center justify-center text-center h-1/2">
                         <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>
                     </div>
-                }
+                )}
+            </div>
+            <div className="w-12 flex items-end justify-center bg-gray-100">
+                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-400" size={20}/></Button>
             </div>
 
         </Container>
+        <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)}/>
+
+
         </>
     );
+}
+
+
+export const SettingsModal = ({isOpen, onRequestClose}: {isOpen: boolean, onRequestClose: () => any}) => {
+    const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraphWithSections>[]}, any> = useSWR(`/api/folder?includeSections=${true}`, fetcher);
+    const [session, loading] = useSession();
+    const [error, setError] = useState<string>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(null);
+    return (
+        <Modal isOpen={isOpen} onRequestClose={onRequestClose}>
+            <p className="mb-4">You are logged in as {loading ? <Skeleton/> : session.user.email}</p>
+            <Button onClick={() => signOut()} className="border border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-white rounded-md transition font-semibold text-sm block">Sign out</Button>
+            
+            <hr className="my-10"/>
+            
+            <PrimaryButton 
+                isLoading={isLoading}
+                disabled={!(foldersData && foldersData.data)}
+                onClick={() => {
+                    try {
+                        if (foldersData && foldersData.data) {
+                            setIsLoading(true);
+                            setError(null);
+                            var zip = new JSZip();
+
+                            for (let folder of foldersData.data) {
+                                var thisFolder = zip.folder(folder.name);
+
+                                for (let file of folder.fileArr) {
+                                    let markdownTextOfCombinedSections = "";
+                                    for (let section of file.sectionArr) {
+                                        markdownTextOfCombinedSections += "# " + (section.name || "")
+                                        markdownTextOfCombinedSections += `
+
+`
+                                        markdownTextOfCombinedSections += section.body || ""
+                                        markdownTextOfCombinedSections += `
+
+
+`
+                                    }
+                                    thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
+                                }
+                            }
+
+                            zip.generateAsync({type:"blob"})
+                            .then(function(content) {
+                                saveAs(content, "scratchpad-data.zip");
+                            })
+                            .finally(() => setIsLoading(false));
+                        }
+
+                    } catch(e) {
+                        setIsLoading(false);
+                        setError(e.message)
+                        console.log(e)
+                    }
+
+                }}
+            >Export all files</PrimaryButton>
+            {error && (
+                <p className="text-red-500 font-bold mt-4">{error}</p>
+            )}
+            
+            <hr className="my-10"/>
+
+            <p>Want to report a bug? I&apos;d greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
+        </Modal>
+
+    )
+
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

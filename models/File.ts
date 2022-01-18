@@ -6,7 +6,8 @@ interface FileDoc extends FileObj, Document {}
 const FileSchema = new mongoose.Schema({
 	name: { required: true, type: String }, 
 	folder: { required: true, type: mongoose.Schema.Types.ObjectId }, 
-	lastOpenSection: {required: false, type: mongoose.Schema.Types.ObjectId }
+	lastOpenSection: {required: false, type: mongoose.Schema.Types.ObjectId },
+	sectionsOrder: { required: false, type: [mongoose.Schema.Types.ObjectId] }
 }, {
 	timestamps: true,
 });
