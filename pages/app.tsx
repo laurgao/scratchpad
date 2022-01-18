@@ -16,6 +16,7 @@ import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
 import Modal from "../components/Modal";
 import PrimaryButton from "../components/PrimaryButton";
+import QuickSwitcher from "../components/QuickSwitcher";
 import ResizableRight from "../components/ResizableRight";
 import SEO from "../components/SEO";
 import SettingsModal from "../components/SettingsModal";
@@ -50,6 +51,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
+    const [isQuickSwitcher, setIsQuickSwitcher] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
     const mainContainerHeight = (openFileId) ? "calc(100vh - 44px)" : "100vh"
     const handleError = (e: Error) => {
@@ -74,9 +76,19 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             if (!isNewFolder) onCreateNewFolder()
         }
 
-        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        function onQuickSwitcherShortcut(e) {
+            e.preventDefault();
+            setIsQuickSwitcher(prev => !prev);
+        }
 
-        return () => Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        // Ctrl+p causes error in MDE but doesn't inturrupt anything in prod.
+        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        Mousetrap.bindGlobal(['command+p', 'ctrl+p'], onQuickSwitcherShortcut);
+
+        return () => {
+            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
+            Mousetrap.unbind(['command+p', 'ctrl+p'], onQuickSwitcherShortcut);
+        }
     });
 
     function createNewFolder() {
@@ -317,6 +329,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
         </Container>
         <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)}/>
+        <QuickSwitcher isOpen={isQuickSwitcher} onRequestClose={() => setIsQuickSwitcher(false)} setOpenFileId={setOpenFileId}/>
 
 
         </>

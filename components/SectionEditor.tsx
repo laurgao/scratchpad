@@ -38,7 +38,6 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
             const cursorInfo = instance.getCursor()
             const thisLine = instance.doc.getLine(cursorInfo.line)
             const isH1 = !isBlur && thisLine.substr(0, 2) === "# ";
-            console.log(instance.doc.children)
     
             if (isH1) setH1Line(cursorInfo.line)
             if (!isH1 && lastIsH1) {
@@ -235,6 +234,8 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
         //     createSectionFromH1Ref.current(instance, true)
         // }
     }), [])
+
+    // For editing section name
 
     const saveSectionName = () => {
         if (editingTitleValue.substring(0, 2) === "# ") {
