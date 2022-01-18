@@ -14,8 +14,8 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
     delete newProps.setOpenFileId
     
     const [query, setQuery] = useState<string>("");
-    const {data, error} = useSWR<{data: DatedObj<SectionObj & {fileArr: FileObj[]}>[], error: any}>(`/api/search?query=${query}`, query.length ? fetcher : async () => []);
-    console.log(data)
+    const [page, setPage] = useState<number>(0);
+    const {data} = useSWR<{data: DatedObj<SectionObj & {fileArr: FileObj[]}>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
 
     useEffect(() => {
         if (props.isOpen) waitForEl("quick-switcher");
@@ -34,27 +34,37 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                 />
             </div>
             <hr/>
-            <div className="mt-4 break-words overflow-hidden flex flex-col">
-                {(data && data.data) ? (
-                    data.data.map(s => 
-                        <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
-                            axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
-                                .then(res => {
-                                    props.setOpenFileId(s.file);
-                                    props.onRequestClose()
-                                    setQuery("")
-                                })
-                                .catch(console.log)
-                            
-                        }}>
-                            <div className="w-full">
-                                <H3>{`${s.fileArr[0] ? s.fileArr[0].name : "Unknown file"} / ${s.name || "Untitled section"}`}</H3>
-                                <SearchBody section={s} query={query}/>
-                            </div>
-                        </Button>
-                    )
+            <div className="mt-4">
+                {(data && data.data && data.data.length) ? (
+                    <div className="break-words overflow-hidden flex flex-col">
+                        { /* Every outermost element inside this div has px-8 */ }
+                        {data.data.map(s => 
+                            <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
+                                axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
+                                    .then(res => {
+                                        props.setOpenFileId(s.file);
+                                        props.onRequestClose()
+                                        setQuery("")
+                                    })
+                                    .catch(console.log)
+                                
+                            }}>
+                                <div className="w-full">
+                                    <H3>{`${s.fileArr[0] ? s.fileArr[0].name : "Unknown file"} / ${s.name || "Untitled section"}`}</H3>
+                                    <SearchBody section={s} query={query}/>
+                                </div>
+                            </Button>
+                        )}
+                        {/* Pagination bar */}
+                        <div className="px-8 flex gap-4 text-sm text-gray-400 mt-6">
+                            {Array.from(Array(Math.ceil(18/10)).keys()).map(n => 
+                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 rounded-md px-4" key={n}>{n + 1}</Button>
+                            )}
+                        </div>
+                        <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}</p>
+                    </div>
                 ) : (
-                    <p className="text-gray-700 px-8">No documents with the given query were found.</p>
+                    <p className="text-gray-400 px-8 text-sm mt-6">No documents with the given query were found.</p>
                 )}
             </div>
         </Modal>
@@ -87,7 +97,9 @@ const SearchBody = ({section, query}) => {
         //     {p}
         // </pre>)
         <div className="text-gray-400 text-sm">
-            {newParagraphs.map( (p, idx) => <p key={idx}>{p.map((f, id) => <span key={id}>{f} </span>)}</p>)}
+            {newParagraphs.map( (p, idx) => <p key={idx} className="mb-2">{
+                p.map((f, id) => <span key={id}>{f} </span>)
+            }</p>)}
         </div>
     )
 }
