@@ -56,7 +56,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
     const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 44px)" : "100vh"
-    const handleError = (e) => {
+    const handleError = (e: Error) => {
         console.log(e);
         setError(e.message);
     }

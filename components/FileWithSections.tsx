@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FaPlus } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import useSWR, { SWRResponse } from "swr";
@@ -11,7 +11,12 @@ import Editor from "./Editor";
 import H2 from "./H2";
 import Input from "./Input";
 
-const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}) => {
+const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}: {
+    fileId: string,
+    openSectionId: string,
+    setOpenSectionId: Dispatch<SetStateAction<string>>,
+    handleError: (e: Error) => void,
+}) => {
     // Data fetching & management
     const [iter, setIter] = useState<number>(0);
     const {data: fileData, error: fileError}: SWRResponse<{data: DatedObj<FileObjGraph>}, any> = useSWR(`/api/file?id=${fileId}&iter=${iter}`, fetcher);

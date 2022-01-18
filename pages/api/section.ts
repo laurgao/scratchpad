@@ -20,10 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const thisObject = await SectionModel.findById(req.body.id);
                     if (!thisObject) return res.status(404);
                     
-                    if (!(typeof(req.body.body) === "undefined")) thisObject.body = req.body.body;
+                    if (typeof(req.body.body) === "string") thisObject.body = req.body.body;
                     if (req.body.addBody) thisObject.body += req.body.addBody;
-                    if (!(typeof(req.body.body) === "undefined")) thisObject.body = req.body.body;
-                    if (!(typeof(req.body.name) === "undefined")) thisObject.name = req.body.name;
+                    if (typeof(req.body.body) === "string") thisObject.body = req.body.body;
+                    if (typeof(req.body.name) === "string") thisObject.name = req.body.name;
                     if (req.body.file) thisObject.file = req.body.file;
                     
                     await thisObject.save();

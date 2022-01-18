@@ -13,12 +13,12 @@ const AUTOSAVE_INTERVAL = 1000
 const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder, setOpenSectionId, handleError}: {
     section: DatedObj<SectionObj>,
     isOpen: boolean,
-    handleError: (e) => any,
     setIter: Dispatch<SetStateAction<number>>,
     fileId: string,
     sectionsOrder: string[],
     setOpenSectionId: Dispatch<SetStateAction<string>>,
     createSection: (name: string, body: string, previousFileId?: string) => any,
+    handleError: (e: Error) => void,
 }) => {
     const editorRef = useRef();
     useEffect(() => {
@@ -176,78 +176,81 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
     const saveSectionName = () => {
         if (editingTitleValue.substring(0, 2) === "# ") {
             axios.post("/api/section", {id: section._id, name: editingTitleValue.substring(2)})
-            .then(res => {
-                setIter(prevIter => prevIter + 1);
-                setEditingTitleValue(null);
-            }) 
-            .catch(handleError)
-        } else {
-            // Delete section and append its body onto the previous section's body.
-            const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
-            const prevSectionId = sectionsOrder[thisSectionIdx - 1]
-
-            let addBody = ""
-            addBody += `
-
-`
-            addBody += editingTitleValue
-            addBody += `
-
-
-`
-            addBody += body
-
-            // const promise1 = axios.post("/api/section", {id: prevSectionId, addBody: addBody})
-            // const promise2 = axios.delete("/api/section", {data: {id: section._id}})
-
-            // Promise.all([promise1, promise2])
-            //     .then(res => {
-            //         console.log(res[0].data.message, res[1].data.message)
-            //     })
-            //     .catch(console.log) // returned error is array of errors
-            //     .finally(() => {
-            //         setOpenSectionId(prevSectionId);
-            //         setEditingTitleValue(null);
-            //         setIter(prevIter => prevIter + 1);
-            //     })
-
-            // This is rlly jank
-            axios.post("/api/section", {id: prevSectionId, addBody: addBody})
                 .then(res => {
-                    // Setting opensectionid not needed bc it gets updated in FileWithSections' useEffect
-                    // but ima keep it anyway bc idk insecure
-                    setOpenSectionId(prevSectionId);
+                    setIter(prevIter => prevIter + 1);
                     setEditingTitleValue(null);
-                })
+                }) 
                 .catch(handleError)
-            axios.delete("/api/section", {data: {id: section._id}})
-                .then(res => {
-                    // setOpenSectionId(prevSectionId);
-                    // setIter(prevIter => prevIter + 1);
-                    // setEditingTitleValue(null);
-                })
-                .catch(handleError)
+        } else {
+            deleteSection()
+        }
+    }
 
-            // Update file.lastOpenSection
-            axios.post("/api/file", { id: fileId, lastOpenSection: prevSectionId })
+    const deleteSection = () => {
+        // Delete section and append its name + body onto the previous section's body.
+        const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+        if (thisSectionIdx === 0) {
+            // If this is the first section, don't delete it.
+            // Will only come here on keydown enter and arrowdown, so save name as empty string.
+            axios.post("/api/section", {id: section._id, name: ""})
+                .then(res => {
+                    setIter(prevIter => prevIter + 1);
+                    setEditingTitleValue(null);
+                }) 
+                .catch(handleError)
+            return;
+        }
+        const prevSectionId = sectionsOrder[thisSectionIdx - 1]
+
+        let addBody = ""
+        addBody += `
+
+`
+        addBody += editingTitleValue
+        addBody += `
+
+
+`
+        addBody += body
+
+        // This is rlly jank
+        axios.post("/api/section", {id: prevSectionId, addBody: addBody})
             .then(res => {
-                console.log(res.data.message)
-                setIter(prevIter => prevIter + 1)
+                // Setting opensectionid not needed bc it gets updated in FileWithSections' useEffect
+                // but ima keep it anyway bc idk insecure
+                setOpenSectionId(prevSectionId);
+                setEditingTitleValue(null);
             })
             .catch(handleError)
-        }
+        axios.delete("/api/section", {data: {id: section._id}})
+            .then(res => {
+                // setOpenSectionId(prevSectionId);
+                // setIter(prevIter => prevIter + 1);
+                // setEditingTitleValue(null);
+            })
+            .catch(handleError)
+
+        // Update file.lastOpenSection
+        axios.post("/api/file", { id: fileId, lastOpenSection: prevSectionId })
+        .then(res => {
+            console.log(res.data.message)
+            setIter(prevIter => prevIter + 1)
+        })
+        .catch(handleError)
     }
 
     // Go to section below
     useEffect(() => {
         if (shouldGoToSectionBelow) {
             const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
-            const belowSectionId = sectionsOrder[thisSectionIdx + 1]
-            setOpenSectionId(belowSectionId)
-            axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
-                .then(res => setIter(prevIter => prevIter + 1))
-                .catch(handleError)
-            setShouldGoToSectionBelow(false)
+            if (thisSectionIdx < sectionsOrder.length - 1) {
+                const belowSectionId = sectionsOrder[thisSectionIdx + 1]
+                setOpenSectionId(belowSectionId)
+                axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
+                    .then(res => setIter(prevIter => prevIter + 1))
+                    .catch(handleError)
+                setShouldGoToSectionBelow(false)
+            }
         }
     }, [shouldGoToSectionBelow, sectionsOrder])
 
@@ -275,15 +278,20 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
                                 // @ts-ignore
                                 editorRef.current.simpleMde.codemirror.focus()
                             } else if (e.key === "ArrowUp") {
-                                // Save name and open the section above this section
-                                saveSectionName();
                                 const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
-                                const prevSectionId = sectionsOrder[thisSectionIdx - 1]
-                                setOpenSectionId(prevSectionId)
-                                axios.post("/api/file", {id: fileId, lastOpenSection: prevSectionId})
-                                    .then(res => setIter(prevIter => prevIter + 1))
-                                    .catch(handleError)
+                                if (thisSectionIdx !== 0) {
+                                    // Save name and open the section above this section
+                                    saveSectionName();
+                                    const prevSectionId = sectionsOrder[thisSectionIdx - 1]
+                                    setOpenSectionId(prevSectionId)
+                                    axios.post("/api/file", {id: fileId, lastOpenSection: prevSectionId})
+                                        .then(res => setIter(prevIter => prevIter + 1))
+                                        .catch(handleError)
+                                }
                                 
+                            } else if (e.key === "Backspace" && editingTitleValue.length === 0) {
+                                const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+                                if (thisSectionIdx !== 0) deleteSection()
                             }
                         }}
                     />
@@ -301,7 +309,10 @@ const Editor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder,
                 if (isOpen) setOpenSectionId(null);
                 else setOpenSectionId(section._id);
 
-                // Update fle.lastOpenSection
+                // Make sure we're not on name editing mode
+                setEditingTitleValue(null);
+
+                // Update file.lastOpenSection
                 axios.post("/api/file", { id: fileId, lastOpenSection: isOpen ? "null" : section._id })
                     .then(res => {
                         console.log(res.data.message)
