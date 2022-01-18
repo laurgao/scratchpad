@@ -1,49 +1,31 @@
-export interface UserObj {
+export type UserObj = {
     email: string,
     name: string,
     image: string,
     lastOpenedFile?: string,
 }
 
-export interface FileObj {
+export type FileObj = {
     name: string; 
     folder: string; 
     lastOpenSection: string;
     sectionsOrder: string[];
 }
 
-export interface SectionObj {
+export type SectionObj = {
     body?: string; 
     name?: string; 
     file: string; 
 }
 
-export interface FolderObj {
+export type FolderObj = {
     user: string; 
     name: string; 
 }
 
-export interface FileObjGraph extends FileObj {
-    sectionArr: DatedObj<SectionObj>[],
-}
-
-export interface FolderObjGraph extends FolderObj {
-    fileArr: DatedObj<FileObj>[],
-}
-
-export interface FolderObjGraphWithSections extends FolderObj {
-    fileArr: DatedObj<FileObjGraph>[],
-}
-
-export interface SessionObj {
-    user: {
-        name: string,
-        email: string,
-        image: string,
-    },
-    userId: string,
-    username: string,
-}
+export type FileObjGraph = FileObj & { sectionArr: DatedObj<SectionObj>[] }
+export type FolderObjGraph = FolderObj & { fileArr: DatedObj<FileObj>[] }
+export type FolderObjGraphWithSections = FolderObj & { fileArr: DatedObj<FileObjGraph>[] }
 
 // generic / type alias from https://stackoverflow.com/questions/26652179/extending-interface-with-generic-in-typescript
 export type DatedObj<T extends {}> = T & {

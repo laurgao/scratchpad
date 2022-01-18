@@ -39,26 +39,6 @@ const FileWithSections = ({fileId, handleError}: {
     // Used for passing information between sections
     // SectionEditor will run functions on open depending on sectionkwargs and will set sectionkwargs as null right after.
     const [sectionKwargs, setSectionKwargs] = useState<SectionKwargsObj>(null);
-    
-    function createSection(name?: string, body?: string, previousFileId?: string) {
-        axios.post("/api/section", {
-            file: fileId,
-            name: name || "",
-            body: body || "",
-            previousFileId: previousFileId || null,
-        })
-            .then(res => {
-                if (res.data.error) handleError(res.data.error);
-                else {
-                    console.log(res.data.message);
-                    setIter(iter + 1);
-                    setOpenSectionId(res.data.id);
-                    // setSectionBody(res.data.body || "");
-                    setNewSectionName("");
-                }
-            })
-            .catch(handleError).finally(() => setIsCreateNewSection(false));
-    }
 
     return (
         <>
@@ -66,7 +46,8 @@ const FileWithSections = ({fileId, handleError}: {
         <div className="mb-4">
             {(file) ? <H2>{file.name}</H2> : <div className="mx-auto w-full md:w-52 overflow-x-hidden"><Skeleton height={36}/></div>}
         </div>
-        {/* File sections */}
+        
+        {/* Create new section form */}
         <div className="text-base text-gray-400">
             {(file) && <div className="flex flex-col">
                 {isCreateNewSection ? (
@@ -77,7 +58,20 @@ const FileWithSections = ({fileId, handleError}: {
                             id="new-section"
                             placeholder="New section name"
                             onKeyDown={e => {
-                                if (e.key === "Enter") createSection(newSectionName)
+                                if (e.key === "Enter") {
+                                    axios.post("/api/section", { file: fileId, name: newSectionName || "", shouldBeLastOpenSection: true})
+                                        .then(res => {
+                                            if (res.data.error) handleError(res.data.error);
+                                            else {
+                                                console.log(res.data.message);
+                                                setIter(iter + 1);
+                                                setOpenSectionId(res.data.id);
+                                                setNewSectionName("");
+                                            }
+                                        })
+                                        .catch(handleError)
+                                        .finally(() => setIsCreateNewSection(false));
+                                }
                                 else if (e.key === "Escape") {
                                     setIsCreateNewSection(false);
                                     setNewSectionName("");
@@ -94,6 +88,8 @@ const FileWithSections = ({fileId, handleError}: {
                 )}
                 <hr/>
             </div>}
+
+            {/* File sections */}
             {(file) && file.sectionArr.map(s => {
                 const thisSectionIsOpen = openSectionId == s._id
                 return (
@@ -101,7 +97,7 @@ const FileWithSections = ({fileId, handleError}: {
                         key={s._id} 
                         section={s} 
                         isOpen={thisSectionIsOpen}
-                        createSection={createSection}
+                        // createSection={createSection}
                         handleError={handleError}
                         fileId={fileId}
                         setIter={setIter}

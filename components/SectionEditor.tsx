@@ -1,6 +1,6 @@
 import axios from "axios";
 import "easymde/dist/easymde.min.css";
-import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { FaAngleDown, FaAngleLeft } from "react-icons/fa";
 import Accordion from "react-robust-accordion";
 import SimpleMDE from "react-simplemde-editor";
@@ -11,14 +11,13 @@ import Input from "./Input";
 
 const AUTOSAVE_INTERVAL = 1000
 
-const SectionEditor = ({section, isOpen, createSection, setIter, fileId, sectionsOrder, setOpenSectionId, sectionKwargs, setSectionKwargs, handleError}: {
+const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpenSectionId, sectionKwargs, setSectionKwargs, handleError}: {
     section: DatedObj<SectionObj>,
     isOpen: boolean,
     setIter: Dispatch<SetStateAction<number>>,
     fileId: string,
     sectionsOrder: string[],
     setOpenSectionId: Dispatch<SetStateAction<string>>,
-    createSection: (name: string, body: string, previousFileId?: string) => any,
     sectionKwargs: SectionKwargsObj,
     setSectionKwargs: Dispatch<SetStateAction<SectionKwargsObj>>,
     handleError: (e: Error) => void,
@@ -111,92 +110,133 @@ const SectionEditor = ({section, isOpen, createSection, setIter, fileId, section
     }
 
     // H1 new section stuff
-    const [lastIsH1, setLastIsH1] = useState<boolean>(false)
     const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
     const [h1Line, setH1Line] = useState<number>(null)
-    const [initiateEditingTitleValue, setInitiateEditingTitleValue] = useState<boolean>(false)
-    const [shouldGoToSectionBelow, setShouldGoToSectionBelow] = useState<boolean>(false);
+
     
-    const events = useMemo(() => ({
-        cursorActivity: (instance) => {
+
+    // Stupid memoized fn declaration
+    const createSectionFromH1Ref = useRef<(instance: any) => (void)>()
+
+    const createSectionFromH1Memoized = useCallback(
+        (instance) => {
             const cursorInfo = instance.getCursor()
             const thisLine = instance.doc.getLine(cursorInfo.line)
             const isH1 = thisLine.substr(0, 2) === "# ";
-
-            setLastIsH1(isH1)
+    
             if (isH1) setH1Line(cursorInfo.line)
+            if (!isH1 && lastIsH1s[lastIsH1s.length - 1]) {
+                // If just clicked off a h1
+                const shouldGoToNewSection = cursorInfo.line >= h1Line
+                console.log(shouldGoToNewSection)
+    
+                // Get name of new section
+                const h1LineContent = instance.doc.getLine(h1Line)
+                const name = h1LineContent.substr(2, h1LineContent.length)
+    
+                // Get body of new section
+                const newBodyArr = instance.doc.children[0].lines.filter((l, idx) => idx > h1Line).map(l => l.text)
+                const newBody = newBodyArr.join(`
+`)
+                
+                // Delete everything under and including the h1.
+                instance.doc.replaceRange(
+                    "",
+                    {line: h1Line, ch: 0},
+                    {line: instance.doc.lineCount(), ch:0}
+                );
+
+                let newSectionId;
+
+                // Create the section
+                axios.post("/api/section", {
+                    file: fileId,
+                    name: name || "",
+                    body: newBody || "",
+                    previousFileId: section._id,
+                    shouldBeLastOpenSection: shouldGoToNewSection,
+                })
+                    .then(res => {
+                        if (res.data.error) handleError(res.data.error);
+                        else {
+                            setIter(prevIter => prevIter + 1);
+                            newSectionId = res.data.id;
+                        }
+                    })
+                    .catch(handleError)
+                
+                if (shouldGoToNewSection) {
+                    setOpenSectionId(newSectionId)
+                }
+                
+    
+                // Reset
+                setH1Line(null);
+                setLastIsH1s([])
+                
+            } else {
+                setLastIsH1s([...lastIsH1s, isH1])
+    
+            }
+        },
+        [setLastIsH1s, h1Line, lastIsH1s, section._id, fileId, handleError, setIter, setOpenSectionId],
+      );
+    useEffect(() => {
+        createSectionFromH1Ref.current = createSectionFromH1Memoized
+    }, [createSectionFromH1Memoized])
+
+    // Stupid memoized function declaration #2: Going to the section below
+
+    const goToSectionBelowRef = useRef<() => (void)>();
+    const goToSectionBelowMemoized = useCallback(() => {
+        const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
+        if (thisSectionIdx < sectionsOrder.length - 1) {
+            const belowSectionId = sectionsOrder[thisSectionIdx + 1]
+            setSectionKwargs({sectionId: belowSectionId, condition: "initiate-on-editing-title"})
+            setOpenSectionId(belowSectionId)
+            axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
+                .then(res => setIter(prevIter => prevIter + 1))
+                .catch(handleError)
+            // setShouldGoToSectionBelow(false)
+        }
+    }, [sectionsOrder, fileId, handleError, section._id, setOpenSectionId, setIter, setSectionKwargs])    
+
+    useEffect(() => {
+        goToSectionBelowRef.current = goToSectionBelowMemoized
+    }, [goToSectionBelowMemoized])
+
+    // Stupid memoized function declaration #3: Set is editing section name
+    const initiateEditingTitleValueRef = useRef<() => (void)>();
+    const initiateEditingTitleValueMemoized = useCallback(() => {
+        setEditingTitleValue("# " + section.name)
+        waitForEl(`${section._id}-edit-section-title`)
+    }, [section.name, section._id])
+    useEffect(() => {
+        initiateEditingTitleValueRef.current = initiateEditingTitleValueMemoized
+    }, [initiateEditingTitleValueMemoized])
+
+    
+    const events = useMemo(() => ({
+        cursorActivity: (instance) => {
+            createSectionFromH1Ref.current(instance)
         },
         keydown: (instance, event) => {
             const cursorInfo = instance.getCursor();
-            const thisLine = instance.doc.getLine(cursorInfo.line);
-
-            const isH1 = thisLine.substr(0, 2) === "# ";
-            setLastIsH1(isH1)
-            if (isH1) setH1Line(cursorInfo.line)
+            createSectionFromH1Ref.current(instance)
 
             const willEditTitle = cursorInfo.line === 0 && 
                 (event.key === "ArrowUp" || cursorInfo.ch === 0 && event.key === "Backspace" )
-            if (willEditTitle) setInitiateEditingTitleValue(true)
+            if (willEditTitle) initiateEditingTitleValueRef.current()
 
             else if (event.key === "ArrowDown" && cursorInfo.line === instance.doc.lineCount() - 1) {
-                setShouldGoToSectionBelow(true)
+                goToSectionBelowRef.current()
             }
         },
-        blur: (instance) => {
-            setLastIsH1(false)
-        }
+        // blur: (instance) => {
+        //     setLastIsH1(false)
+        // }
     }), [])
 
-    // SET IS EDITING SECTION NAME
-    useEffect(() => {
-        // Because if section.name changes calling this function in the useMemo will not take the new section.name into account
-        // even if it's in the dep array
-        if (initiateEditingTitleValue) {
-            setEditingTitleValue("# " + section.name)
-            waitForEl(`${section._id}-edit-section-title`)
-            setInitiateEditingTitleValue(false)
-        }
-    }, [initiateEditingTitleValue, section.name, section._id])
-
-    // CREATE NEW SECTION FROM H1
-    useEffect(() => {
-        if (!lastIsH1 && lastIsH1s[lastIsH1s.length - 1]) {
-            // If just clicked off a h1
-
-            // @ts-ignore
-            const codemirror = editorRef.current.simpleMde.codemirror;
-
-            // Get name of new section
-            const thisLine = codemirror.doc.getLine(h1Line)
-            const name = thisLine.substr(2, thisLine.length)
-
-            // Get body of new section
-            const newBodyArr = codemirror.doc.children[0].lines.filter((l, idx) => idx > h1Line).map(l => l.text)
-            const newBody = newBodyArr.join(`
-`)
-            
-            // Delete everything under and including the h1.
-            codemirror.doc.replaceRange(
-                "",
-                {line: h1Line, ch: 0},
-                {line: codemirror.doc.lineCount(), ch:0}
-            );
-            
-            createSection(name, newBody, section._id)
-
-            setH1Line(null);
-            setLastIsH1(false); // should alr b false doe
-            setLastIsH1s([])
-        } else {
-            setLastIsH1s(p => [...p, lastIsH1])
-        }
-
-    }, [lastIsH1])
-    // createSection and saveSection should never change bc they're static functions
-    // h1line only changes in 1 place and that's also where lastEvent changes.
-    // lastEvents doesn't change except for inside this useEffect. if i include it in the dependency array, it might cause infinite calling?
-    
-    
     const saveSectionName = () => {
         if (editingTitleValue.substring(0, 2) === "# ") {
             axios.post("/api/section", {id: section._id, name: editingTitleValue.substring(2)})
@@ -263,24 +303,7 @@ const SectionEditor = ({section, isOpen, createSection, setIter, fileId, section
         .catch(handleError)
     }
 
-    // Go to section below
-    useEffect(() => {
-        if (shouldGoToSectionBelow) {
-            const thisSectionIdx = sectionsOrder.findIndex(id => id.toString() === section._id)
-            if (thisSectionIdx < sectionsOrder.length - 1) {
-                const belowSectionId = sectionsOrder[thisSectionIdx + 1]
-                setSectionKwargs({sectionId: belowSectionId, condition: "initiate-on-editing-title"})
-                setOpenSectionId(belowSectionId)
-                axios.post("/api/file", {id: fileId, lastOpenSection: belowSectionId})
-                    .then(res => setIter(prevIter => prevIter + 1))
-                    .catch(handleError)
-                setShouldGoToSectionBelow(false)
-            }
-        }
-    }, [shouldGoToSectionBelow, sectionsOrder])
-
     return (
-        <>
         <div className="relative">
             {(editingTitleValue || typeof(editingTitleValue) === "string") && (
                 <div className="absolute left-2">
@@ -323,47 +346,46 @@ const SectionEditor = ({section, isOpen, createSection, setIter, fileId, section
                     />
                 </div>
             )}
-        <Accordion
-            label={
-                <div className="flex p-2 items-center" style={{height: "30px"}}>
-                    {!(editingTitleValue || typeof(editingTitleValue) === "string") && ( <p>{section.name}</p> )}
-                    {isOpen ? <FaAngleDown size={14} className="ml-auto"/> : <FaAngleLeft size={14} className="ml-auto"/>}
-                </div>
-            }                            
-            setOpenState={(event) => {
-                // Handle only allowing 1 section to be open at a time
-                if (isOpen) setOpenSectionId(null);
-                else setOpenSectionId(section._id);
+            <Accordion
+                label={
+                    <div className="flex p-2 items-center" style={{height: "30px"}}>
+                        {!(editingTitleValue || typeof(editingTitleValue) === "string") && ( <p>{section.name}</p> )}
+                        {isOpen ? <FaAngleDown size={14} className="ml-auto"/> : <FaAngleLeft size={14} className="ml-auto"/>}
+                    </div>
+                }                            
+                setOpenState={(event) => {
+                    // Handle only allowing 1 section to be open at a time
+                    if (isOpen) setOpenSectionId(null);
+                    else setOpenSectionId(section._id);
 
-                // Make sure we're not on name editing mode
-                setEditingTitleValue(null);
+                    // Make sure we're not on name editing mode
+                    setEditingTitleValue(null);
 
-                // Update file.lastOpenSection
-                axios.post("/api/file", { id: fileId, lastOpenSection: isOpen ? "null" : section._id })
-                    .then(res => {
-                        console.log(res.data.message)
-                        setIter(prevIter => prevIter + 1)
-                    })
-                    .catch(handleError)
-            }}
-            openState={isOpen}
-        >
-            <SimpleMDE
-                ref={editorRef}
-                onChange={setBody}
-                value={body}
-                options={{
-                    spellChecker: false,
-                    placeholder: "Unload your working memory ✨ ...",
-                    toolbar: []
+                    // Update file.lastOpenSection
+                    axios.post("/api/file", { id: fileId, lastOpenSection: isOpen ? "null" : section._id })
+                        .then(res => {
+                            console.log(res.data.message)
+                            setIter(prevIter => prevIter + 1)
+                        })
+                        .catch(handleError)
                 }}
-                className="text-lg"
-                events={events}
-            />
+                openState={isOpen}
+            >
+                <SimpleMDE
+                    ref={editorRef}
+                    onChange={setBody}
+                    value={body}
+                    options={{
+                        spellChecker: false,
+                        placeholder: "Unload your working memory ✨ ...",
+                        toolbar: []
+                    }}
+                    className="text-lg"
+                    events={events}
+                />
             </Accordion>                        
-        <hr/>
+            <hr/>
         </div>
-        </>
     )
 }
 

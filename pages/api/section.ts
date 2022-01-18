@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     });                    
                     const savedSection = await newSection.save();
                     
-                    thisFile.lastOpenSection = savedSection._id;
+                    if (req.body.shouldBeLastOpenSection) thisFile.lastOpenSection = savedSection._id;
 
                     if (req.body.previousFileId) {
                         // Insert savedSection._id after req.body.previousFileId in thisFile.sectionsOrder
