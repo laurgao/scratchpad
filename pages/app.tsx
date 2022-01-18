@@ -5,8 +5,8 @@ import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
 import { getSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
-import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
-import { FiSettings, FiTrash } from "react-icons/fi";
+import { FaAngleDown, FaAngleRight, FaCog, FaPlus, FaSearch } from "react-icons/fa";
+import { FiTrash } from "react-icons/fi";
 import Accordion from "react-robust-accordion";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
@@ -53,6 +53,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [isQuickSwitcher, setIsQuickSwitcher] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
+    const [hoverCoordsForQuickSwitcher, setHoverCoordsForQuickSwitcher] = useState<{x: number, y: number}>(null);
     const mainContainerHeight = (openFileId) ? "calc(100vh - 44px)" : "100vh"
     const handleError = (e: Error) => {
         console.log(e);
@@ -183,7 +184,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
         ) : <></>
     }
-    
+
     return (
         <>
         <SEO />
@@ -195,6 +196,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
                 style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1])}}
             >(win) ctrl + /<br/>(mac) cmd + /</div>
+        }
+
+        {!!hoverCoordsForQuickSwitcher && 
+            <div 
+                className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
+                style={{right: `calc(100vh - ${hoverCoordsForQuickSwitcher.x - 330}px)`, top: (hoverCoordsForQuickSwitcher.y), maxWidth: 310}}
+            >(win) ctrl + p<br/>(mac) cmd + p</div>
         }
 
         {toDeleteItemForRightClick && <RightClickMenu file={toDeleteItemForRightClick[0]} x={toDeleteItemForRightClick[1]} y={toDeleteItemForRightClick[2]}/>}
@@ -229,6 +237,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             onClick={onCreateNewFolder}
                             onMouseLeave={(e) => setHoverCoords(null)}
                             onMouseMove={e => setHoverCoords([e.pageX, e.pageY])}
+                            onMouseEnter={e => setHoverCoords([e.pageX, e.pageY])}
                         >
                             <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
                         </Button>
@@ -323,8 +332,14 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </div>
-            <div className="w-12 flex items-end justify-center bg-gray-100">
-                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-400" size={20}/></Button>
+            <div className="w-12 flex flex-col justify-end align-center bg-gray-100 gap-2 mb-2">
+                <Button 
+                    onClick={() => setIsQuickSwitcher(true)}
+                    onMouseLeave={(e) => setHoverCoordsForQuickSwitcher(null)}
+                    onMouseMove={e => setHoverCoordsForQuickSwitcher({x: e.pageX, y: e.pageY})}
+                    onMouseEnter={e => setHoverCoordsForQuickSwitcher({x: e.pageX, y: e.pageY})}
+                ><FaSearch className="text-gray-400" size={20}/></Button>
+                <Button onClick={() => setIsSettings(true)}><FaCog className="text-gray-400" size={20}/></Button>
             </div>
 
         </Container>

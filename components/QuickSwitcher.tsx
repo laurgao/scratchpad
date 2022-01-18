@@ -9,20 +9,24 @@ import Button from "./Button";
 import H3 from "./H3";
 import Modal from "./Modal";
 
-const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
-    const newProps = {...props}
-    delete newProps.setOpenFileId
-    
+const QuickSwitcher = ({isOpen, onRequestClose, setOpenFileId}: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
     const [query, setQuery] = useState<string>("");
     const [page, setPage] = useState<number>(0);
     const {data} = useSWR<{data: DatedObj<SectionObj & {fileArr: FileObj[]}>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
 
     useEffect(() => {
-        if (props.isOpen) waitForEl("quick-switcher");
-    }, [props.isOpen])
+        if (isOpen) waitForEl("quick-switcher");
+    }, [isOpen])
 
     return (
-        <Modal {...props} className="px-4 py-6">
+        <Modal 
+            isOpen={isOpen} 
+            onRequestClose={() => {
+                onRequestClose();
+                setQuery("");
+            }} 
+            className="px-4 py-6"
+        >
             <div className="flex items-center border-gray-100" id="f">
                 <FiSearch className="text-gray-400 mr-6"/>
                 <input
@@ -42,8 +46,8 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                             <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
                                 axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
                                     .then(res => {
-                                        props.setOpenFileId(s.file);
-                                        props.onRequestClose()
+                                        setOpenFileId(s.file);
+                                        onRequestClose()
                                         setQuery("")
                                     })
                                     .catch(console.log)
@@ -61,11 +65,13 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                 <Button onClick={() => setPage(n)} className="hover:bg-gray-50 rounded-md px-4" key={n}>{n + 1}</Button>
                             )}
                         </div>
-                        <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}</p>
+                        <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">
+                            Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}
+                        </p>
                     </div>
-                ) : (
+                ) : query.length ? (
                     <p className="text-gray-400 px-8 text-sm mt-6">No documents with the given query were found.</p>
-                )}
+                ) : <></>}
             </div>
         </Modal>
     )
