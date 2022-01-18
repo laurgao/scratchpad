@@ -24,6 +24,82 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
 }) => {
     const editorRef = useRef();
     const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
+    
+    // H1 new section stuff
+    const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
+    const [h1Line, setH1Line] = useState<number>(null)
+
+    // Stupid memoized fn declaration in 3 parts
+    // Need to put these before the useEffect that runs on open
+    const createSectionFromH1Ref = useRef<(instance: any) => (void)>()
+
+    const createSectionFromH1Memoized = useCallback(
+        (instance) => {
+            const cursorInfo = instance.getCursor()
+            const thisLine = instance.doc.getLine(cursorInfo.line)
+            const isH1 = thisLine.substr(0, 2) === "# ";
+    
+            if (isH1) setH1Line(cursorInfo.line)
+            if (!isH1 && lastIsH1s[lastIsH1s.length - 1]) {
+                // If just clicked off a h1
+                const shouldGoToNewSection = cursorInfo.line >= h1Line
+                const newCursorPosition = shouldGoToNewSection ? {line: cursorInfo.line - h1Line - 1, ch: cursorInfo.ch} : null
+                
+                // Get name of new section
+                const h1LineContent = instance.doc.getLine(h1Line)
+                const name = h1LineContent.substr(2, h1LineContent.length)
+    
+                // Get body of new section
+                const newBodyArr = instance.doc.children[0].lines.filter((l, idx) => idx > h1Line).map(l => l.text)
+                const newBody = newBodyArr.join(`
+`)
+                
+                // Delete everything under and including the h1.
+                instance.doc.replaceRange(
+                    "",
+                    {line: h1Line, ch: 0},
+                    {line: instance.doc.lineCount(), ch:0}
+                );
+
+                let newSectionId;
+
+                // Create the section
+                axios.post("/api/section", {
+                    file: fileId,
+                    name: name || "",
+                    body: newBody || "",
+                    previousFileId: section._id,
+                    shouldBeLastOpenSection: shouldGoToNewSection,
+                })
+                    .then(res => {
+                        if (res.data.error) handleError(res.data.error);
+                        else {
+                            
+                
+                            if (shouldGoToNewSection) {
+                                setSectionKwargs({sectionId: res.data.id, condition: "initiate-on-specified-cursor-pos", initialCursorPos: newCursorPosition})
+                                setOpenSectionId(res.data.id)
+                            }
+                
+                            setIter(prevIter => prevIter + 1);  
+                        }
+                    })
+                    .catch(handleError)
+    
+                // Reset
+                setH1Line(null);
+                setLastIsH1s([])
+                
+            } else {
+                setLastIsH1s([...lastIsH1s, isH1])
+    
+            }
+        },
+        [setLastIsH1s, h1Line, lastIsH1s, section._id, fileId, handleError, setIter, setOpenSectionId, setSectionKwargs],
+      );
+    useEffect(() => {
+        createSectionFromH1Ref.current = createSectionFromH1Memoized
+    }, [createSectionFromH1Memoized])
 
     useEffect(() => {
         if (isOpen && !editingTitleValue) {
@@ -37,6 +113,11 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
                     const rightMostChar = codemirror.doc.getLine(lowestLine).length;
                     codemirror.setCursor({line: lowestLine, ch: rightMostChar})
 
+                } else if (sectionKwargs.condition === "initiate-on-specified-cursor-pos") {
+                    // @ts-ignore
+                    const codemirror = editorRef.current.simpleMde.codemirror;
+                    codemirror.focus()
+                    codemirror.setCursor(sectionKwargs.initialCursorPos)
                 } else if (sectionKwargs.condition === "initiate-on-editing-title") {
                     setEditingTitleValue("# " + section.name);
                     waitForEl(`${section._id}-edit-section-title`);
@@ -109,81 +190,6 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
             .catch(handleError);
     }
 
-    // H1 new section stuff
-    const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
-    const [h1Line, setH1Line] = useState<number>(null)
-
-    
-
-    // Stupid memoized fn declaration
-    const createSectionFromH1Ref = useRef<(instance: any) => (void)>()
-
-    const createSectionFromH1Memoized = useCallback(
-        (instance) => {
-            const cursorInfo = instance.getCursor()
-            const thisLine = instance.doc.getLine(cursorInfo.line)
-            const isH1 = thisLine.substr(0, 2) === "# ";
-    
-            if (isH1) setH1Line(cursorInfo.line)
-            if (!isH1 && lastIsH1s[lastIsH1s.length - 1]) {
-                // If just clicked off a h1
-                const shouldGoToNewSection = cursorInfo.line >= h1Line
-                console.log(shouldGoToNewSection)
-    
-                // Get name of new section
-                const h1LineContent = instance.doc.getLine(h1Line)
-                const name = h1LineContent.substr(2, h1LineContent.length)
-    
-                // Get body of new section
-                const newBodyArr = instance.doc.children[0].lines.filter((l, idx) => idx > h1Line).map(l => l.text)
-                const newBody = newBodyArr.join(`
-`)
-                
-                // Delete everything under and including the h1.
-                instance.doc.replaceRange(
-                    "",
-                    {line: h1Line, ch: 0},
-                    {line: instance.doc.lineCount(), ch:0}
-                );
-
-                let newSectionId;
-
-                // Create the section
-                axios.post("/api/section", {
-                    file: fileId,
-                    name: name || "",
-                    body: newBody || "",
-                    previousFileId: section._id,
-                    shouldBeLastOpenSection: shouldGoToNewSection,
-                })
-                    .then(res => {
-                        if (res.data.error) handleError(res.data.error);
-                        else {
-                            setIter(prevIter => prevIter + 1);
-                            newSectionId = res.data.id;
-                        }
-                    })
-                    .catch(handleError)
-                
-                if (shouldGoToNewSection) {
-                    setOpenSectionId(newSectionId)
-                }
-                
-    
-                // Reset
-                setH1Line(null);
-                setLastIsH1s([])
-                
-            } else {
-                setLastIsH1s([...lastIsH1s, isH1])
-    
-            }
-        },
-        [setLastIsH1s, h1Line, lastIsH1s, section._id, fileId, handleError, setIter, setOpenSectionId],
-      );
-    useEffect(() => {
-        createSectionFromH1Ref.current = createSectionFromH1Memoized
-    }, [createSectionFromH1Memoized])
 
     // Stupid memoized function declaration #2: Going to the section below
 

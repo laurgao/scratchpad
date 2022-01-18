@@ -13,7 +13,8 @@ import SectionEditor from "./SectionEditor";
 
 export interface SectionKwargsObj {
     sectionId: string,
-    condition: "initiate-on-editing-title" | "initiate-with-cursor-on-bottom",
+    condition: "initiate-on-editing-title" | "initiate-with-cursor-on-bottom" | "initiate-on-specified-cursor-pos",
+    initialCursorPos?: {line: number, ch: number}
 };
 
 const FileWithSections = ({fileId, handleError}: {
