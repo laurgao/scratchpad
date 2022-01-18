@@ -26,23 +26,24 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
     const [editingTitleValue, setEditingTitleValue] = useState<string>(null);
     
     // H1 new section stuff
-    const [lastIsH1s, setLastIsH1s] = useState<boolean[]>([])
+    const [lastIsH1, setLastIsH1] = useState<boolean>(false)
     const [h1Line, setH1Line] = useState<number>(null)
 
     // Stupid memoized fn declaration in 3 parts
     // Need to put these before the useEffect that runs on open
-    const createSectionFromH1Ref = useRef<(instance: any) => (void)>()
+    const createSectionFromH1Ref = useRef<(instance: any, isBlur?: boolean) => (void)>()
 
     const createSectionFromH1Memoized = useCallback(
-        (instance) => {
+        (instance, isBlur?) => {
             const cursorInfo = instance.getCursor()
             const thisLine = instance.doc.getLine(cursorInfo.line)
-            const isH1 = thisLine.substr(0, 2) === "# ";
+            const isH1 = !isBlur && thisLine.substr(0, 2) === "# ";
+            console.log(instance.doc.children)
     
             if (isH1) setH1Line(cursorInfo.line)
-            if (!isH1 && lastIsH1s[lastIsH1s.length - 1]) {
+            if (!isH1 && lastIsH1) {
                 // If just clicked off a h1
-                const shouldGoToNewSection = cursorInfo.line >= h1Line
+                const shouldGoToNewSection = !isBlur && cursorInfo.line >= h1Line
                 const newCursorPosition = shouldGoToNewSection ? {line: cursorInfo.line - h1Line - 1, ch: cursorInfo.ch} : null
                 
                 // Get name of new section
@@ -61,8 +62,6 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
                     {line: instance.doc.lineCount(), ch:0}
                 );
 
-                let newSectionId;
-
                 // Create the section
                 axios.post("/api/section", {
                     file: fileId,
@@ -74,13 +73,10 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
                     .then(res => {
                         if (res.data.error) handleError(res.data.error);
                         else {
-                            
-                
                             if (shouldGoToNewSection) {
                                 setSectionKwargs({sectionId: res.data.id, condition: "initiate-on-specified-cursor-pos", initialCursorPos: newCursorPosition})
                                 setOpenSectionId(res.data.id)
                             }
-                
                             setIter(prevIter => prevIter + 1);  
                         }
                     })
@@ -88,14 +84,11 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
     
                 // Reset
                 setH1Line(null);
-                setLastIsH1s([])
+                setLastIsH1(false)
                 
-            } else {
-                setLastIsH1s([...lastIsH1s, isH1])
-    
-            }
+            } else setLastIsH1(isH1)
         },
-        [setLastIsH1s, h1Line, lastIsH1s, section._id, fileId, handleError, setIter, setOpenSectionId, setSectionKwargs],
+        [setLastIsH1, h1Line, lastIsH1, section._id, fileId, handleError, setIter, setOpenSectionId, setSectionKwargs],
       );
     useEffect(() => {
         createSectionFromH1Ref.current = createSectionFromH1Memoized
@@ -221,14 +214,14 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
         initiateEditingTitleValueRef.current = initiateEditingTitleValueMemoized
     }, [initiateEditingTitleValueMemoized])
 
-    
+
     const events = useMemo(() => ({
         cursorActivity: (instance) => {
             createSectionFromH1Ref.current(instance)
         },
         keydown: (instance, event) => {
+            // Every keydown that changes cursor (letter key or space, backspace, enter, etc.) is also a cursorActivity. (but not shift, alt, ctrl)
             const cursorInfo = instance.getCursor();
-            createSectionFromH1Ref.current(instance)
 
             const willEditTitle = cursorInfo.line === 0 && 
                 (event.key === "ArrowUp" || cursorInfo.ch === 0 && event.key === "Backspace" )
@@ -239,7 +232,7 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
             }
         },
         // blur: (instance) => {
-        //     setLastIsH1(false)
+        //     createSectionFromH1Ref.current(instance, true)
         // }
     }), [])
 
