@@ -21,13 +21,12 @@ const FileWithSections = ({fileId, handleError}: {
     const [iter, setIter] = useState<number>(0);
     const {data: fileData, error: fileError}: SWRResponse<{data: DatedObj<FileObjGraph>}, any> = useSWR(`/api/file?id=${fileId}&iter=${iter}`, fetcher);
     const [file, setFile] = useState<DatedObj<FileObjGraph>>(null);
-    useEffect(() => {if (fileData && fileData.data) setFile(fileData.data)}, [fileData])
-
     useEffect(() => {
-        // For initiating opensectionId when compomponent mounts +
-        // if file.lastOpenSection is changed inside Editor when current open section is deleted
-        if (!!fileData && !!fileData.data) setOpenSectionId(fileData.data.lastOpenSection)
-    }, [!!fileData && !!fileData.data, fileData])
+        if (fileData && fileData.data) {
+            setFile(fileData.data);
+            setOpenSectionId(fileData.data.lastOpenSection);
+        }
+    }, [fileData])
 
     const [newSectionName, setNewSectionName] = useState<string>("");
     const [isCreateNewSection, setIsCreateNewSection] = useState<boolean>(false);
