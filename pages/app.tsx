@@ -42,7 +42,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [folders, setFolders] = useState<DatedObj<FolderObjGraph>[]>([]);
 
     // Current opened items
-    const [openSectionId, setOpenSectionId] = useState<string>(props.lastOpenedFile.lastOpenSection);
     const [openFileId, setOpenFileId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile._id : "");
     const [openFolderId, setOpenFolderId] = useState<string>(props.lastOpenedFile ? props.lastOpenedFile.folder : "");
 
@@ -55,7 +54,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
-    const mainContainerHeight = (openFileId && openSectionId) ? "calc(100vh - 44px)" : "100vh"
+    const mainContainerHeight = (openFileId) ? "calc(100vh - 44px)" : "100vh"
     const handleError = (e: Error) => {
         console.log(e);
         setError(e.message);
@@ -310,8 +309,6 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 {(openFileId) ? 
                     <FileWithSections
                         fileId={openFileId}
-                        openSectionId={openSectionId}
-                        setOpenSectionId={setOpenSectionId}
                         handleError={handleError}
                     /> : <div className="flex items-center justify-center text-center h-1/2">
                         <p>No file is open.<br/>Ctrl + / or Cmd + / to create a new {!openFolderId ? "folder to store your files" : "file"}.</p>

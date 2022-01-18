@@ -11,12 +11,12 @@ import Editor from "./Editor";
 import H2 from "./H2";
 import Input from "./Input";
 
-const FileWithSections = ({fileId, openSectionId, setOpenSectionId, handleError}: {
+const FileWithSections = ({fileId, handleError}: {
     fileId: string,
-    openSectionId: string,
-    setOpenSectionId: Dispatch<SetStateAction<string>>,
     handleError: (e: Error) => void,
 }) => {
+    const [openSectionId, setOpenSectionId] = useState<string>(null);
+
     // Data fetching & management
     const [iter, setIter] = useState<number>(0);
     const {data: fileData, error: fileError}: SWRResponse<{data: DatedObj<FileObjGraph>}, any> = useSWR(`/api/file?id=${fileId}&iter=${iter}`, fetcher);
