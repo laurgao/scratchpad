@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await dbConnect();
 
         const thisUser = await UserModel.findOne({email: session.user.email})
-        const fileAggregation = [    
+        const checkFileBelongsToThisUserAggregation = [    
             {$lookup: {
                 from: "folders",
                 localField: "folder",
@@ -30,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }},
             {$unwind: "$folderItem"},
             {$match: {"folderItem.user": mongoose.Types.ObjectId(thisUser.id.toString())}},
-            {$project: {name: 1}},
         ]
         const sectionAggregation = [
             {$match: {$or: [
@@ -42,7 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 let: {"id": "$file"}, // Local field
                 pipeline: [
                     {$match: {$expr: {$and: [{$eq: ["$_id", "$$id"]}, ]}}},
-                    ...fileAggregation,
+                    ...checkFileBelongsToThisUserAggregation,
+                    {$project: {name: 1, _id: 0}},
                 ],
                 as: "fileItem",
             }},
@@ -53,7 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 "name": {$regex: `.*${req.query.query}.*`, $options: "i"},
             }},
             {$sort: {updatedAt: -1}},
-            ...fileAggregation,
+            ...checkFileBelongsToThisUserAggregation,
+            {$project: {name: 1}},
         ])
         const filesCount = matchingFiles.length
         const skip = req.query.page ? (+req.query.page * countPerPage) : 0
@@ -91,13 +92,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         const allMatchingDocuments = onlySections ? matchingSections[0].sample : matchingFilesSkipped.concat(matchingSections[0].sample)
-
-        
-
-        // If return 404, data will be undefined. so u dont have to check that data.data.length !== 0
-        // if (!allMatchingSections || !allMatchingSections.length) return res.status(404).send("No documents with this query were found")
-        // nvm no more 404ing bc count will always be returned.
-        // if nothing matches query, then the return value is allMatchingSections[0].sample: Array(0), allMatchingSections[0].count: Array(0)
 
         const sectionsCount = matchingSections[0].count.length ? matchingSections[0].count[0].count : 0
         const count = sectionsCount + filesCount
