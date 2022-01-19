@@ -1,7 +1,7 @@
 import axios from "axios";
-import { file } from "jszip";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FiSearch } from "react-icons/fi";
+import Skeleton from "react-loading-skeleton";
 import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
@@ -10,7 +10,7 @@ import Button from "./Button";
 import H3 from "./H3";
 import Modal from "./Modal";
 
-type SectionOrFile = (SectionObj & {fileArr: FileObj[]}) | FileObj
+type SectionOrFile = (SectionObj & {fileItem: FileObj}) | FileObj
 
 const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
     const [query, setQuery] = useState<string>("");
@@ -21,6 +21,10 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
     useEffect(() => {
         if (props.isOpen) waitForEl("quick-switcher");
     }, [props.isOpen])
+
+    useEffect(() => {
+        setPage(0)
+    }, [query])
 
     const onRequestClose = () => {
         props.onRequestClose();
@@ -46,13 +50,17 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
             </div>
             <hr/>
             <div className="mt-4">
-                {(data && data.data && data.data.length) ? (
+                { /* Every outermost element inside this div has px-8 */ }
+                {(data) ? (data.data && data.data.length) ? (
                     <div className="break-words overflow-hidden flex flex-col">
-                        { /* Every outermost element inside this div has px-8 */ }
-                        {/* @ts-ignore */}
-                        {data.data.map((s, id) => s.file ? (
-                                // s is a sectioin
-                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" id={`searched-doc-${id}`} onClick={() => {
+                        {data.data.map((s, idx) => {
+                            // @ts-ignore 
+                            const isSection = !!s.file
+
+                            let onClick = () => {};
+                            let buttonChildren = <></>
+                            if (isSection) {
+                                onClick = () => {
                                     // @ts-ignore
                                     axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
                                         .then(res => {
@@ -61,39 +69,45 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                             onRequestClose()
                                         })
                                         .catch(console.log)
-                                    
-                                }}>
-                                    <div className="w-full">
-                                        {/* @ts-ignore */}
-                                        <H3>{`${s.fileArr[0] ? s.fileArr[0].name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</H3>
-                                        <SearchBody section={s} query={query}/>
-                                    </div>
-                                </Button>
-                            ) : (
-                                // s is a file
-                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
+                                }
+                                buttonChildren = (
+                                    <>
+                                    {/* @ts-ignore */}
+                                    <H3>{`${s.fileItem ? s.fileItem.name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</H3>
+                                    <SearchBody section={s} query={query}/>
+                                    </>
+                                )
+                            } else {
+                                onClick = () => {
                                     props.setOpenFileId(s._id)
                                     onRequestClose()
-                                }}>
+                                }
+                                buttonChildren =  <H3>{`${s.name}`}</H3>
+                            }
+                            
+                            return (
+                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" id={`searched-doc-${idx}`} onClick={onClick}>
                                     <div className="w-full">
-                                        <H3>{`${s.name}`}</H3>
+                                        {buttonChildren}
                                     </div>
                                 </Button>
                             )
-                        )}
+                        })}
                         {/* Pagination bar */}
                         <div className="px-8 flex gap-4 text-sm text-gray-400 mt-6">
                             {data.count > 10 && Array.from(Array(Math.ceil(data.count/10)).keys()).map(n => 
-                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 disabled:hover:bg-transparent rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
+                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 disabled:bg-gray-50 rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
                             )}
                         </div>
                         <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">
                             Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}
                         </p>
                     </div>
-                ) : query.length ? (
+                ) : (query.length ? (
                     <p className="text-gray-400 px-8 text-sm mt-6">No documents with the given query were found.</p>
-                ) : <></>}
+                ) : <></> ) : (
+                    <div className="px-8"><Skeleton height={32} count={5} className="my-2"/></div>
+                )}
             </div>
         </Modal>
     )

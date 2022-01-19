@@ -1,23 +1,58 @@
+import mongoose from "mongoose";
 import { NextApiRequest, NextApiResponse } from "next";
-import { SectionModel } from "../../models/Section";
+import { getSession } from "next-auth/client";
 import { FileModel } from "../../models/File";
+import { SectionModel } from "../../models/Section";
+import { UserModel } from "../../models/User";
 import cleanForJSON from "../../utils/cleanForJSON";
 import dbConnect from "../../utils/dbConnect";
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "GET") return res.status(405).send("Invalid method")
     if (!req.query.query) return res.status(406).send("No query found in request")
     if (Array.isArray(req.query.query)) return res.status(406).json({message: "Invalid query"});
 
+    const session = await getSession({req})
+    if (!session) return res.status(403).send("Not logged in")
+
+    const countPerPage = 10
     try {
         await dbConnect();
 
-        const countPerPage = 10
+        const thisUser = await UserModel.findOne({email: session.user.email})
+        const fileAggregation = [    
+            {$lookup: {
+                from: "folders",
+                localField: "folder",
+                foreignField: "_id", 
+                as: "folderItem",
+            }},
+            {$unwind: "$folderItem"},
+            {$match: {"folderItem.user": mongoose.Types.ObjectId(thisUser.id.toString())}},
+            {$project: {name: 1}},
+        ]
+        const sectionAggregation = [
+            {$match: {$or: [
+                {"body": {$regex: `.*${req.query.query}.*`, $options: "i"}}, 
+                {"name": {$regex: `.*${req.query.query}.*`, $options: "i"}}
+            ]}},
+            {$lookup: {
+                from: "files",
+                let: {"id": "$file"}, // Local field
+                pipeline: [
+                    {$match: {$expr: {$and: [{$eq: ["$_id", "$$id"]}, ]}}},
+                    ...fileAggregation,
+                ],
+                as: "fileItem",
+            }},
+        ]
 
         const matchingFiles = await FileModel.aggregate([
             {$match: {
                 "name": {$regex: `.*${req.query.query}.*`, $options: "i"},
             }},
+            ...fileAggregation,
         ])
         const filesCount = matchingFiles.length
         const skip = req.query.page ? (+req.query.page * countPerPage) : 0
@@ -31,37 +66,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let matchingSections = [{sample: [], count: []}]
         if (includeSections) {
             matchingSections = await SectionModel.aggregate([
-                {$match: {$or: [
-                    {"body": {$regex: `.*${req.query.query}.*`, $options: "i"}}, 
-                    {"name": {$regex: `.*${req.query.query}.*`, $options: "i"}}
-                ]}},
-                {
-                    $lookup: {
-                        from: "files",
-                        localField: "file", // Section field
-                        foreignField: "_id", //  File field
-                        as: "fileArr",
-                    },
-                },
-                {
-                    $facet: {
-                        count: [{$count: "count"}],
-                        sample: [
-                            {$skip: onlySections ? (skip - filesCount) : 0},
-                            {$limit: onlySections ? countPerPage : countPerPage - (filesCount - skip)},
-                        ],
-                    }
-                },
+                ...sectionAggregation,
+                {$unwind: "$fileItem"},
+                {$facet: {
+                    count: [{$count: "count"}],
+                    sample: [
+                        {$skip: onlySections ? (skip - filesCount) : 0},
+                        {$limit: onlySections ? countPerPage : countPerPage - (filesCount - skip)}, 
+                        // $skip cannot be greater than skip
+                        // $limit cannot be greater than countPerPage
+                        // not onlySections means (filecount > skip) so (filecount - skip) is positive
+                    ],
+                }},
             ])
         } else {
-            const sCount = await SectionModel.count( {$or: [
-                {"body": {$regex: `.*${req.query.query}.*`, $options: "i"}}, 
-                {"name": {$regex: `.*${req.query.query}.*`, $options: "i"}}
-            ]})
-            matchingSections[0].count.push({count: sCount})
+            const sCount = await SectionModel.aggregate([
+                ...sectionAggregation,
+                {$count: "count"},
+                {$unwind: "$count"}
+            ])
+            matchingSections[0].count.push({count: sCount[0].count})
         }
 
-        const allMatchingDocuments = (onlySections) ? matchingSections[0].sample : matchingFilesSkipped.concat(matchingSections[0].sample)
+        const allMatchingDocuments = onlySections ? matchingSections[0].sample : matchingFilesSkipped.concat(matchingSections[0].sample)
 
         
 
