@@ -1,6 +1,6 @@
 const H3 = ({children} : {children: string}) => {
     return (
-        <p className="font-bold text-gray-700">{children}</p>
+        <h3 className="font-bold text-gray-700">{children}</h3>
     )
 }
 

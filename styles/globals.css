@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-	@apply font-mono bg-gray-50
+	@apply bg-gray-50
 }
 
 .loading-spinner {

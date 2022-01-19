@@ -7,7 +7,6 @@ import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
 import { DatedObj, FileObj, SectionObj } from "../utils/types";
 import Button from "./Button";
-import H3 from "./H3";
 import Modal from "./Modal";
 
 type SectionOrFile = (SectionObj & {fileItem: FileObj}) | FileObj
@@ -110,7 +109,7 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                 buttonChildren = (
                                     <>
                                     {/* @ts-ignore */}
-                                    <H3>{`${s.fileItem ? s.fileItem.name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</H3>
+                                    <SearchNameH3 query={query}>{`${s.fileItem ? s.fileItem.name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</SearchNameH3>
                                     <SearchBody section={s} query={query}/>
                                     </>
                                 )
@@ -119,7 +118,7 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                     props.setOpenFileId(s._id)
                                     onRequestClose()
                                 }
-                                buttonChildren =  <H3>{`${s.name}`}</H3>
+                                buttonChildren =  <SearchNameH3 query={query}>{`${s.name}`}</SearchNameH3>
                             }
                             
                             return (
@@ -151,9 +150,9 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                         </p>
                     </div>
                 ) : (query.length ? (
-                    <p className="text-gray-400 px-8 text-sm mt-6">No documents with the given query were found.</p>
+                    <p className="text-gray-400 px-8 text-sm mt-2">No documents containing the given query were found.</p>
                 ) : <></> ) : (
-                    <div className="px-8"><Skeleton height={32} count={5} className="my-2"/></div>
+                    <div className="px-8 mt-2"><Skeleton height={32} count={5} className="my-2"/></div>
                 )}
             </div>
         </Modal>
@@ -165,6 +164,23 @@ const includesAQueryWord = (string: string, queryWords: string[]) => {
         if (string.toLowerCase().includes(word.toLowerCase())) return true
     }
     return false
+}
+
+const SearchNameH3 = ({children, query}: {children: string, query: string}) => {
+    const queryWords = query.split(" ")
+    const nameWords = children.split(" ")
+    const newNameWords = nameWords.map(word => (
+        includesAQueryWord(word, queryWords) 
+            ? <span className="font-bold text-gray-700">{word}</span> 
+            : <span className="font-semibold text-gray-600">{word}</span>
+    ))
+    return (
+        <h3>{newNameWords.map((element, idx) => (
+            idx === 0 
+                ? <span key={idx}>{element}</span> 
+                : <span key={idx}> {element}</span>
+        ))}</h3>
+    )
 }
 
 const SearchBody = ({section, query}) => {

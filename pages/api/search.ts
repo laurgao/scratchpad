@@ -52,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             {$match: {
                 "name": {$regex: `.*${req.query.query}.*`, $options: "i"},
             }},
+            {$sort: {updatedAt: -1}},
             ...fileAggregation,
         ])
         const filesCount = matchingFiles.length
@@ -68,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             matchingSections = await SectionModel.aggregate([
                 ...sectionAggregation,
                 {$unwind: "$fileItem"},
+                {$sort: {updatedAt: -1}},
                 {$facet: {
                     count: [{$count: "count"}],
                     sample: [
