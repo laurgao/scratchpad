@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import { FiSearch } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import useSWR from "swr";
@@ -15,16 +15,8 @@ type SectionOrFile = (SectionObj & {fileItem: FileObj}) | FileObj
 const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
     const [query, setQuery] = useState<string>("");
     const [page, setPage] = useState<number>(0);
+    const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const {data} = useSWR<{data: DatedObj<SectionOrFile>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
-    console.log(data)
-
-    useEffect(() => {
-        if (props.isOpen) waitForEl("quick-switcher");
-    }, [props.isOpen])
-
-    useEffect(() => {
-        setPage(0)
-    }, [query])
 
     const onRequestClose = () => {
         props.onRequestClose();
@@ -37,15 +29,53 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
             isOpen={props.isOpen} 
             onRequestClose={onRequestClose} 
             className="px-4 py-6"
+            id="quick-switcher-modal"
         >
             <div className="flex items-center border-gray-100" id="f">
                 <FiSearch className="text-gray-400 mr-6"/>
                 <input
                     value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    id="quick-switcher"
-                    placeholder="Quick file switcher"
+                    onChange={e => {
+                        setQuery(e.target.value);
+                        setPage(0);
+                        setSelectedIndex(0);
+                    }}
+                    id="quick-switcher-input"
+                    placeholder="Go to document"
                     className="w-full focus:online-none outline-none py-1 text-gray-500"
+                    autoFocus
+                    onKeyDown={e => {
+                        if (data && data.data && data.data.length) {
+                            if (e.key === "ArrowDown") {
+                                e.preventDefault()
+                                const newSelectedIndex = selectedIndex === (data.data.length - 1) ? 0 : selectedIndex + 1
+                                setSelectedIndex(newSelectedIndex)
+
+                                // Scroll to selected element
+                                const modal = document.getElementById("quick-switcher-modal")
+                                    if (newSelectedIndex !== (data.data.length - 1)) {
+                                        // Scroll such that the bottom of the element we want is at the bottom of the modal viewing area
+                                        var elmntAfter = document.getElementById(`searched-doc-${newSelectedIndex + 1}`);
+                                        modal.scroll(0, elmntAfter.offsetTop - modal.offsetHeight)
+                                    } else {
+                                        // Is last element
+                                        var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
+                                        modal.scroll(0, elmnt.offsetTop)
+                                    }
+                            } else if (e.key === "ArrowUp") {
+                                e.preventDefault()
+                                const newSelectedIndex = selectedIndex === 0 ? (data.data.length - 1) : (selectedIndex - 1)
+                                setSelectedIndex(newSelectedIndex)
+
+                                // Scroll to selected element
+                                var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
+                                const modal = document.getElementById("quick-switcher-modal")
+                                modal.scroll(0, elmnt.offsetTop)
+                            } else if (e.key === "Enter") {
+                                waitForEl(`searched-doc-${selectedIndex}`)
+                            }
+                        }
+                    }}
                 />
             </div>
             <hr/>
@@ -86,7 +116,13 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                             }
                             
                             return (
-                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" id={`searched-doc-${idx}`} onClick={onClick}>
+                                <Button 
+                                    key={s._id} 
+                                    className={("px-8 text-left") + (idx === selectedIndex ? " bg-gray-100" : "")} 
+                                    id={`searched-doc-${idx}`} 
+                                    onClick={onClick} 
+                                    onMouseEnter={() => setSelectedIndex(idx)}
+                                >
                                     <div className="w-full">
                                         {buttonChildren}
                                     </div>
@@ -96,7 +132,11 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                         {/* Pagination bar */}
                         <div className="px-8 flex gap-4 text-sm text-gray-400 mt-6">
                             {data.count > 10 && Array.from(Array(Math.ceil(data.count/10)).keys()).map(n => 
-                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 disabled:bg-gray-50 rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
+                                <Button onClick={() => {
+                                    setPage(n);
+                                    setSelectedIndex(0);
+                                    waitForEl("quick-switcher-input")
+                                }} className="hover:bg-gray-50 disabled:bg-gray-50 rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
                             )}
                         </div>
                         <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">

@@ -7,7 +7,7 @@ export default function Button(props: ButtonProps) {
     const classNames = (
         props.className 
         + " p-2 relative" 
-        + (props.disabled ? " cursor-not-allowed opacity-50 " : "") 
+        + (props.disabled ? " cursor-not-allowed " : "") 
         + (props.isLoading ? " cursor-wait" : "")
     );
     const childClassNames = props.childClassName + (props.isLoading ? " invisible" : "")
