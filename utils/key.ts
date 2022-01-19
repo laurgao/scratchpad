@@ -31,15 +31,3 @@ export function waitForEl(selector: string) {
         }, 100);
     }
 };
-
-export function waitForElClick(selector: string, cb: () => any) {
-    const input = document.getElementById(selector);
-    if (input) {
-        input.click();
-        cb();
-    } else {
-        setTimeout(function() {
-            waitForEl(selector);
-        }, 100);
-    }
-};

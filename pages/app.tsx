@@ -1,15 +1,12 @@
 import axios from "axios";
 import { format } from "date-fns";
-import { saveAs } from 'file-saver';
-import JSZip from "jszip";
 import Mousetrap from "mousetrap";
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind';
 import { GetServerSideProps } from "next";
-import { getSession, signOut, useSession } from "next-auth/client";
+import { getSession } from "next-auth/client";
 import { useEffect, useRef, useState } from "react";
-import { FaAngleDown, FaAngleRight, FaPlus } from "react-icons/fa";
-import { FiSettings, FiTrash } from "react-icons/fi";
-import Skeleton from "react-loading-skeleton";
+import { FaAngleDown, FaAngleRight, FaCog, FaPlus, FaSearch } from "react-icons/fa";
+import { FiTrash } from "react-icons/fi";
 import Accordion from "react-robust-accordion";
 import useSWR, { SWRResponse } from "swr";
 import Button from "../components/Button";
@@ -19,16 +16,17 @@ import Input from "../components/Input";
 import LoadingBar from "../components/LoadingBar";
 import Modal from "../components/Modal";
 import PrimaryButton from "../components/PrimaryButton";
+import QuickSwitcher from "../components/QuickSwitcher";
 import ResizableRight from "../components/ResizableRight";
 import SEO from "../components/SEO";
+import SettingsModal from "../components/SettingsModal";
 import { FileModel } from "../models/File";
 import { UserModel } from "../models/User";
 import cleanForJSON from "../utils/cleanForJSON";
 import dbConnect from "../utils/dbConnect";
 import fetcher from "../utils/fetcher";
 import { waitForEl } from "../utils/key";
-import { DatedObj, FileObjGraph, FolderObjGraph, FolderObjGraphWithSections, UserObj } from "../utils/types";
-import { A } from "./index";
+import { DatedObj, FileObjGraph, FolderObjGraph, UserObj } from "../utils/types";
 
 
 export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: DatedObj<FileObjGraph> }) {
@@ -53,7 +51,9 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
     const [toDeleteItemForRightClick, setToDeleteItemForRightClick] = useState<any[]>(null);
 
     const [isSettings, setIsSettings] = useState<boolean>(false);
+    const [isQuickSwitcher, setIsQuickSwitcher] = useState<boolean>(false);
     const [hoverCoords, setHoverCoords] = useState<number[]>(null);
+    const [hoverCoordsForQuickSwitcher, setHoverCoordsForQuickSwitcher] = useState<{x: number, y: number}>(null);
     const mainContainerHeight = (openFileId) ? "calc(100vh - 44px)" : "100vh"
     const handleError = (e: Error) => {
         console.log(e);
@@ -77,9 +77,19 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             if (!isNewFolder) onCreateNewFolder()
         }
 
-        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        function onQuickSwitcherShortcut(e) {
+            e.preventDefault();
+            setIsQuickSwitcher(prev => !prev);
+        }
 
-        return () => Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        // Ctrl+p causes error in MDE but doesn't inturrupt anything in prod.
+        Mousetrap.bindGlobal(['command+/', 'ctrl+/'], onNewFolderShortcut);
+        Mousetrap.bindGlobal(['command+p', 'ctrl+p'], onQuickSwitcherShortcut);
+
+        return () => {
+            Mousetrap.unbind(['command+/', 'ctrl+/'], onNewFolderShortcut);
+            Mousetrap.unbind(['command+p', 'ctrl+p'], onQuickSwitcherShortcut);
+        }
     });
 
     function createNewFolder() {
@@ -174,7 +184,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
             </div>
         ) : <></>
     }
-    
+
     return (
         <>
         <SEO />
@@ -186,6 +196,13 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                 className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
                 style={{left: (hoverCoords[0] + 20), top: (hoverCoords[1])}}
             >(win) ctrl + /<br/>(mac) cmd + /</div>
+        }
+
+        {!!hoverCoordsForQuickSwitcher && 
+            <div 
+                className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
+                style={{right: `calc(100vh - ${hoverCoordsForQuickSwitcher.x - 330}px)`, top: (hoverCoordsForQuickSwitcher.y), maxWidth: 310}}
+            >(win) ctrl + p<br/>(mac) cmd + p</div>
         }
 
         {toDeleteItemForRightClick && <RightClickMenu file={toDeleteItemForRightClick[0]} x={toDeleteItemForRightClick[1]} y={toDeleteItemForRightClick[2]}/>}
@@ -220,6 +237,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                             onClick={onCreateNewFolder}
                             onMouseLeave={(e) => setHoverCoords(null)}
                             onMouseMove={e => setHoverCoords([e.pageX, e.pageY])}
+                            onMouseEnter={e => setHoverCoords([e.pageX, e.pageY])}
                         >
                             <FaPlus/><p className="ml-2">New {!openFolderId ? "folder" : "file"}</p>
                         </Button>
@@ -314,87 +332,23 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </div>
-            <div className="w-12 flex items-end justify-center bg-gray-100">
-                <Button onClick={() => setIsSettings(true)}><FiSettings className="text-gray-400" size={20}/></Button>
+            <div className="w-12 flex flex-col justify-end items-center bg-gray-100 gap-2 mb-2" style={{height: mainContainerHeight}}>
+                <Button 
+                    onClick={() => setIsQuickSwitcher(true)}
+                    onMouseLeave={(e) => setHoverCoordsForQuickSwitcher(null)}
+                    onMouseMove={e => setHoverCoordsForQuickSwitcher({x: e.pageX, y: e.pageY})}
+                    onMouseEnter={e => setHoverCoordsForQuickSwitcher({x: e.pageX, y: e.pageY})}
+                ><FaSearch className="text-gray-400" size={20}/></Button>
+                <Button onClick={() => setIsSettings(true)}><FaCog className="text-gray-400" size={20}/></Button>
             </div>
 
         </Container>
         <SettingsModal isOpen={isSettings} onRequestClose={() => setIsSettings(false)}/>
+        <QuickSwitcher isOpen={isQuickSwitcher} onRequestClose={() => setIsQuickSwitcher(false)} setOpenFileId={setOpenFileId}/>
 
 
         </>
     );
-}
-
-
-export const SettingsModal = ({isOpen, onRequestClose}: {isOpen: boolean, onRequestClose: () => any}) => {
-    const {data: foldersData, error: foldersError}: SWRResponse<{data: DatedObj<FolderObjGraphWithSections>[]}, any> = useSWR(`/api/folder?includeSections=${true}`, fetcher);
-    const [session, loading] = useSession();
-    const [error, setError] = useState<string>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(null);
-    return (
-        <Modal isOpen={isOpen} onRequestClose={onRequestClose}>
-            <p className="mb-4">You are logged in as {loading ? <Skeleton/> : session.user.email}</p>
-            <Button onClick={() => signOut()} className="border border-gray-400 text-gray-400 hover:bg-gray-400 hover:text-white rounded-md transition font-semibold text-sm block">Sign out</Button>
-            
-            <hr className="my-10"/>
-            
-            <PrimaryButton 
-                isLoading={isLoading}
-                disabled={!(foldersData && foldersData.data)}
-                onClick={() => {
-                    try {
-                        if (foldersData && foldersData.data) {
-                            setIsLoading(true);
-                            setError(null);
-                            var zip = new JSZip();
-
-                            for (let folder of foldersData.data) {
-                                var thisFolder = zip.folder(folder.name);
-
-                                for (let file of folder.fileArr) {
-                                    let markdownTextOfCombinedSections = "";
-                                    for (let section of file.sectionArr) {
-                                        markdownTextOfCombinedSections += "# " + (section.name || "")
-                                        markdownTextOfCombinedSections += `
-
-`
-                                        markdownTextOfCombinedSections += section.body || ""
-                                        markdownTextOfCombinedSections += `
-
-
-`
-                                    }
-                                    thisFolder.file(`${file.name}.md`, markdownTextOfCombinedSections,);
-                                }
-                            }
-
-                            zip.generateAsync({type:"blob"})
-                            .then(function(content) {
-                                saveAs(content, "scratchpad-data.zip");
-                            })
-                            .finally(() => setIsLoading(false));
-                        }
-
-                    } catch(e) {
-                        setIsLoading(false);
-                        setError(e.message)
-                        console.log(e)
-                    }
-
-                }}
-            >Export all files</PrimaryButton>
-            {error && (
-                <p className="text-red-500 font-bold mt-4">{error}</p>
-            )}
-            
-            <hr className="my-10"/>
-
-            <p>Want to report a bug? I&apos;d greatly appreciate if you contact me @ gaolauro@gmail.com or make an issue on <A href="https://github.com/laurgao/scratchpad/issues/new">GitHub</A>. Thank you :D</p>
-        </Modal>
-
-    )
-
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

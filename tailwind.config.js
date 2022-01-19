@@ -9,6 +9,10 @@ module.exports = {
             padding: "1rem",
         },
     },
-    variants: {},
+    variants: {
+        extend: {
+            backgroundColor: ['disabled'],
+        }
+    },
     plugins: [],
 }
