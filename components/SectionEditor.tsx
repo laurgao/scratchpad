@@ -111,7 +111,7 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
                     codemirror.focus()
                     codemirror.setCursor(sectionKwargs.initialCursorPos)
                 } else if (sectionKwargs.condition === "initiate-on-editing-title") {
-                    setEditingTitleValue("# " + section.name);
+                    setEditingTitleValue("# " + (section.name || "")); // In case section.name is undefined for files created before the advent of SectionModel
                     waitForEl(`${section._id}-edit-section-title`);
                 }
 
@@ -206,7 +206,7 @@ const SectionEditor = ({section, isOpen, setIter, fileId, sectionsOrder, setOpen
     // Stupid memoized function declaration #3: Set is editing section name
     const initiateEditingTitleValueRef = useRef<() => (void)>();
     const initiateEditingTitleValueMemoized = useCallback(() => {
-        setEditingTitleValue("# " + section.name)
+        setEditingTitleValue("# " + (section.name || ""))
         waitForEl(`${section._id}-edit-section-title`)
     }, [section.name, section._id])
     useEffect(() => {
