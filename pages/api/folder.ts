@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const thisUser = await UserModel.findOne({email: session.user.email})
 
                 let lookup = [];
-                if (req.body.includeSections) {
+                if (req.query.includeSections) {
                     lookup.push({
                         $lookup: {
                             from: "sections",
