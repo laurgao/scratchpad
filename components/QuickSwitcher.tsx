@@ -1,4 +1,5 @@
 import axios from "axios";
+import { file } from "jszip";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FiSearch } from "react-icons/fi";
 import useSWR from "swr";
@@ -9,22 +10,28 @@ import Button from "./Button";
 import H3 from "./H3";
 import Modal from "./Modal";
 
-const QuickSwitcher = ({isOpen, onRequestClose, setOpenFileId}: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
+type SectionOrFile = (SectionObj & {fileArr: FileObj[]}) | FileObj
+
+const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
     const [query, setQuery] = useState<string>("");
     const [page, setPage] = useState<number>(0);
-    const {data} = useSWR<{data: DatedObj<SectionObj & {fileArr: FileObj[]}>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
+    const {data} = useSWR<{data: DatedObj<SectionOrFile>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
+    console.log(data)
 
     useEffect(() => {
-        if (isOpen) waitForEl("quick-switcher");
-    }, [isOpen])
+        if (props.isOpen) waitForEl("quick-switcher");
+    }, [props.isOpen])
+
+    const onRequestClose = () => {
+        props.onRequestClose();
+        setQuery("");
+        setPage(0)
+    }
 
     return (
         <Modal 
-            isOpen={isOpen} 
-            onRequestClose={() => {
-                onRequestClose();
-                setQuery("");
-            }} 
+            isOpen={props.isOpen} 
+            onRequestClose={onRequestClose} 
             className="px-4 py-6"
         >
             <div className="flex items-center border-gray-100" id="f">
@@ -42,27 +49,42 @@ const QuickSwitcher = ({isOpen, onRequestClose, setOpenFileId}: {isOpen: boolean
                 {(data && data.data && data.data.length) ? (
                     <div className="break-words overflow-hidden flex flex-col">
                         { /* Every outermost element inside this div has px-8 */ }
-                        {data.data.map(s => 
-                            <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
-                                axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
-                                    .then(res => {
-                                        setOpenFileId(s.file);
-                                        onRequestClose()
-                                        setQuery("")
-                                    })
-                                    .catch(console.log)
-                                
-                            }}>
-                                <div className="w-full">
-                                    <H3>{`${s.fileArr[0] ? s.fileArr[0].name : "Unknown file"} / ${s.name || "Untitled section"}`}</H3>
-                                    <SearchBody section={s} query={query}/>
-                                </div>
-                            </Button>
+                        {/* @ts-ignore */}
+                        {data.data.map((s, id) => s.file ? (
+                                // s is a sectioin
+                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" id={`searched-doc-${id}`} onClick={() => {
+                                    // @ts-ignore
+                                    axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
+                                        .then(res => {
+                                            // @ts-ignore
+                                            props.setOpenFileId(s.file);
+                                            onRequestClose()
+                                        })
+                                        .catch(console.log)
+                                    
+                                }}>
+                                    <div className="w-full">
+                                        {/* @ts-ignore */}
+                                        <H3>{`${s.fileArr[0] ? s.fileArr[0].name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</H3>
+                                        <SearchBody section={s} query={query}/>
+                                    </div>
+                                </Button>
+                            ) : (
+                                // s is a file
+                                <Button key={s._id} className="px-8 hover:bg-gray-100 text-left" onClick={() => {
+                                    props.setOpenFileId(s._id)
+                                    onRequestClose()
+                                }}>
+                                    <div className="w-full">
+                                        <H3>{`${s.name}`}</H3>
+                                    </div>
+                                </Button>
+                            )
                         )}
                         {/* Pagination bar */}
                         <div className="px-8 flex gap-4 text-sm text-gray-400 mt-6">
-                            {Array.from(Array(Math.ceil(18/10)).keys()).map(n => 
-                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 rounded-md px-4" key={n}>{n + 1}</Button>
+                            {data.count > 10 && Array.from(Array(Math.ceil(data.count/10)).keys()).map(n => 
+                                <Button onClick={() => setPage(n)} className="hover:bg-gray-50 disabled:hover:bg-transparent rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
                             )}
                         </div>
                         <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">

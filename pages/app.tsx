@@ -332,7 +332,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
                     </div>
                 )}
             </div>
-            <div className="w-12 flex flex-col justify-end align-center bg-gray-100 gap-2 mb-2">
+            <div className="w-12 flex flex-col justify-end items-center bg-gray-100 gap-2 mb-2" style={{height: mainContainerHeight}}>
                 <Button 
                     onClick={() => setIsQuickSwitcher(true)}
                     onMouseLeave={(e) => setHoverCoordsForQuickSwitcher(null)}
