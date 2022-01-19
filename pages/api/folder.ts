@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/client";
 import { FileModel } from "../../models/File";
 import { FolderModel } from "../../models/Folder";
+import { SectionModel } from "../../models/Section";
 import { UserModel } from "../../models/User";
 import dbConnect from "../../utils/dbConnect";
 
@@ -103,9 +104,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!thisObject) return res.status(404).send("No folder with given ID found.");
                 if (thisObject.user.toString() !== thisUser._id.toString()) return res.status(403).send("You do not have permission to delete this folder.");
                 
+                const files = await FileModel.find({folder: req.body.id})
+                const deletedFileIds = files.map(f => f._id)
+
                 await FolderModel.deleteOne({_id: req.body.id});
-                await FileModel.deleteMany({folder: req.body.id});
-                
+                await FileModel.deleteMany({folder: req.body.id});                
+                await SectionModel.deleteMany({file: {$in: deletedFileIds}})
+
                 return res.status(200).json({message: "Folder deleted! 🗑️"});
             } catch (e) {
                 return res.status(500).json({message: e});
