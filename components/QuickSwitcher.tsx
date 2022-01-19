@@ -21,17 +21,24 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
     const onRequestClose = () => {
         props.onRequestClose();
         setQuery("");
-        setPage(0)
+        setPage(0);
+        setSelectedIndex(0);
     }
+
+    // Height of area of modal that is not scroll
+    const heightOfInput = 32 + 24
+    // = height + margin-top (mt-6 => 6 * 4)
 
     return (
         <Modal 
             isOpen={props.isOpen} 
             onRequestClose={onRequestClose} 
-            className="px-4 py-6"
-            id="quick-switcher-modal"
+            className="px-0 flex flex-col overflow-y-hidden"
         >
-            <div className="flex items-center border-gray-100" id="f">
+            {/* Because I want scrollbar to be snug against border of modal, i can't add padding x or y to the modal directly. */}
+            {/* Every direct child of modal has px-4 */}
+            {/* Also modal has py-6 so top should have mt-6 and bottom mb-6 */}
+            <div className="flex items-center border-gray-100 px-4 mt-6" id="f">
                 <FiSearch className="text-gray-400 mr-6"/>
                 <input
                     value={query}
@@ -52,15 +59,15 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                 setSelectedIndex(newSelectedIndex)
 
                                 // Scroll to selected element
-                                const modal = document.getElementById("quick-switcher-modal")
+                                const modal = document.getElementById("quick-switcher-scroll-area")
                                     if (newSelectedIndex !== (data.data.length - 1)) {
-                                        // Scroll such that the bottom of the element we want is at the bottom of the modal viewing area
+                                        // Scroll such that the lower edge of the element we want is at the bottom of the modal viewing area
                                         var elmntAfter = document.getElementById(`searched-doc-${newSelectedIndex + 1}`);
-                                        modal.scroll(0, elmntAfter.offsetTop - modal.offsetHeight)
+                                        modal.scroll(0, elmntAfter.offsetTop - modal.offsetHeight - heightOfInput)
                                     } else {
                                         // Is last element
                                         var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
-                                        modal.scroll(0, elmnt.offsetTop)
+                                        modal.scroll(0, elmnt.offsetTop - heightOfInput)
                                     }
                             } else if (e.key === "ArrowUp") {
                                 e.preventDefault()
@@ -69,8 +76,8 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
 
                                 // Scroll to selected element
                                 var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
-                                const modal = document.getElementById("quick-switcher-modal")
-                                modal.scroll(0, elmnt.offsetTop)
+                                const modal = document.getElementById("quick-switcher-scroll-area")
+                                modal.scroll(0, (elmnt.offsetTop - heightOfInput))
                             } else if (e.key === "Enter") {
                                 waitForEl(`searched-doc-${selectedIndex}`)
                             }
@@ -79,7 +86,7 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                 />
             </div>
             <hr/>
-            <div className="mt-4">
+            <div className="flex-grow px-4 pb-6 overflow-y-auto" id="quick-switcher-scroll-area">
                 { /* Every outermost element inside this div has px-8 */ }
                 {(data) ? (data.data && data.data.length) ? (
                     <div className="break-words overflow-hidden flex flex-col">
@@ -139,7 +146,7 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                 }} className="hover:bg-gray-50 disabled:bg-gray-50 rounded-md px-4" key={n} disabled={n === page}>{n + 1}</Button>
                             )}
                         </div>
-                        <p className="px-8 text-sm text-gray-400 mt-2 md:text-right">
+                        <p className="px-8 text-sm text-gray-400 mt-2 text-right">
                             Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}
                         </p>
                     </div>
