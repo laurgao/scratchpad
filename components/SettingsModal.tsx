@@ -65,7 +65,7 @@ const SettingsModal = ({isOpen, onRequestClose}: {isOpen: boolean, onRequestClos
                     } catch(e) {
                         setIsLoading(false);
                         setError(e.message)
-                        console.log(e)
+                        console.error(e)
                     }
 
                 }}
