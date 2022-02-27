@@ -1,34 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;600;700;800;900&display=swap');
 
 body {
-	@apply bg-gray-50
+	@apply bg-gray-50;
+	font-family: 'Inconsolata', sans-serif;
 }
 
 .loading-spinner {
-    border-radius: 50%;
-    position: absolute;
-    top: calc(50% - 0.5rem);
-    left: calc(50% - 0.5rem);
-    width: 1rem;
-    height: 1rem;
-    padding: 0.2rem;
-    background: conic-gradient(rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 75%) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    animation: spin 1s linear infinite;
+	border-radius: 50%;
+	position: absolute;
+	top: calc(50% - 0.5rem);
+	left: calc(50% - 0.5rem);
+	width: 1rem;
+	height: 1rem;
+	padding: 0.2rem;
+	background: conic-gradient(rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 75%) border-box;
+	-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
+	from {
+		transform: rotate(0deg);
+	}
 
-    to {
-        transform: rotate(-360deg);
-    }
+	to {
+		transform: rotate(-360deg);
+	}
 }
 
 .loading-bar {
