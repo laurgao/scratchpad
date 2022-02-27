@@ -201,7 +201,7 @@ export default function App(props: { user: DatedObj<UserObj>, lastOpenedFile: Da
         {!!hoverCoordsForQuickSwitcher && 
             <div 
                 className="bg-white border border-gray-400 p-1 z-30 absolute text-xs text-gray-400"
-                style={{right: `calc(100vh - ${hoverCoordsForQuickSwitcher.x - 330}px)`, top: (hoverCoordsForQuickSwitcher.y), maxWidth: 310}}
+                style={{right: `calc(100vw - ${hoverCoordsForQuickSwitcher.x - 20}px)`, top: (hoverCoordsForQuickSwitcher.y), maxWidth: 310}}
             >(win) ctrl + p<br/>(mac) cmd + p</div>
         }
 
