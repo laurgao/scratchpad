@@ -32,12 +32,12 @@ const QuickSwitcher = (props: { isOpen: boolean, onRequestClose: () => (any), se
         <Modal
             isOpen={props.isOpen}
             onRequestClose={onRequestClose}
-            className="px-0 flex flex-col overflow-y-hidden"
+            className="px-0 flex flex-col overflow-y-hidden font-sans"
         >
             {/* Because I want scrollbar to be snug against border of modal, i can't add padding x or y to the modal directly. */}
             {/* Every direct child of modal has px-4 */}
             {/* Also modal has py-6 so top should have mt-6 and bottom mb-6 */}
-            <div className="flex items-center border-gray-100 px-4 mt-6 font-sans" id="f">
+            <div className="flex items-center border-gray-100 px-4 mt-6" id="f">
                 <FiSearch className="text-gray-400 mr-6" />
                 <input
                     value={query}
