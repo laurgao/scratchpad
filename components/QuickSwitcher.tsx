@@ -9,13 +9,13 @@ import { DatedObj, FileObj, SectionObj } from "../utils/types";
 import Button from "./Button";
 import Modal from "./Modal";
 
-type SectionOrFile = (SectionObj & {fileItem: FileObj}) | FileObj
+type SectionOrFile = (SectionObj & { fileItem: { name: string } }) | FileObj
 
-const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>>}) => {
+const QuickSwitcher = (props: { isOpen: boolean, onRequestClose: () => (any), setOpenFileId: Dispatch<SetStateAction<string>> }) => {
     const [query, setQuery] = useState<string>("");
     const [page, setPage] = useState<number>(0);
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
-    const {data} = useSWR<{data: DatedObj<SectionOrFile>[], count: number}>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
+    const { data } = useSWR<{ data: DatedObj<SectionOrFile>[], count: number }>(`/api/search?query=${query}&page=${page}`, query.length ? fetcher : async () => []);
 
     const onRequestClose = () => {
         props.onRequestClose();
@@ -29,16 +29,16 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
     // = height + margin-top (mt-6 => 6 * 4)
 
     return (
-        <Modal 
-            isOpen={props.isOpen} 
-            onRequestClose={onRequestClose} 
+        <Modal
+            isOpen={props.isOpen}
+            onRequestClose={onRequestClose}
             className="px-0 flex flex-col overflow-y-hidden"
         >
             {/* Because I want scrollbar to be snug against border of modal, i can't add padding x or y to the modal directly. */}
             {/* Every direct child of modal has px-4 */}
             {/* Also modal has py-6 so top should have mt-6 and bottom mb-6 */}
-            <div className="flex items-center border-gray-100 px-4 mt-6" id="f">
-                <FiSearch className="text-gray-400 mr-6"/>
+            <div className="flex items-center border-gray-100 px-4 mt-6 font-sans" id="f">
+                <FiSearch className="text-gray-400 mr-6" />
                 <input
                     value={query}
                     onChange={e => {
@@ -59,15 +59,15 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
 
                                 // Scroll to selected element
                                 const modal = document.getElementById("quick-switcher-scroll-area")
-                                    if (newSelectedIndex !== (data.data.length - 1)) {
-                                        // Scroll such that the lower edge of the element we want is at the bottom of the modal viewing area
-                                        var elmntAfter = document.getElementById(`searched-doc-${newSelectedIndex + 1}`);
-                                        modal.scroll(0, elmntAfter.offsetTop - modal.offsetHeight - heightOfInput)
-                                    } else {
-                                        // Is last element
-                                        var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
-                                        modal.scroll(0, elmnt.offsetTop - heightOfInput)
-                                    }
+                                if (newSelectedIndex !== (data.data.length - 1)) {
+                                    // Scroll such that the lower edge of the element we want is at the bottom of the modal viewing area
+                                    var elmntAfter = document.getElementById(`searched-doc-${newSelectedIndex + 1}`);
+                                    modal.scroll(0, elmntAfter.offsetTop - modal.offsetHeight - heightOfInput)
+                                } else {
+                                    // Is last element
+                                    var elmnt = document.getElementById(`searched-doc-${newSelectedIndex}`);
+                                    modal.scroll(0, elmnt.offsetTop - heightOfInput)
+                                }
                             } else if (e.key === "ArrowUp") {
                                 e.preventDefault()
                                 const newSelectedIndex = selectedIndex === 0 ? (data.data.length - 1) : (selectedIndex - 1)
@@ -84,21 +84,21 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                     }}
                 />
             </div>
-            <hr/>
+            <hr />
             <div className="flex-grow px-4 pb-6 overflow-y-auto" id="quick-switcher-scroll-area">
-                { /* Every outermost element inside this div has px-8 */ }
+                { /* Every outermost element inside this div has px-8 */}
                 {(data) ? (data.data && data.data.length) ? (
                     <div className="break-words overflow-hidden flex flex-col">
                         {data.data.map((s, idx) => {
                             // @ts-ignore 
                             const isSection = !!s.file
 
-                            let onClick = () => {};
+                            let onClick = () => { };
                             let buttonChildren = <></>
                             if (isSection) {
                                 onClick = () => {
                                     // @ts-ignore
-                                    axios.post("/api/file", {id: s.file, lastOpenSection: s._id})
+                                    axios.post("/api/file", { id: s.file, lastOpenSection: s._id })
                                         .then(res => {
                                             // @ts-ignore
                                             props.setOpenFileId(s.file);
@@ -108,9 +108,9 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                 }
                                 buttonChildren = (
                                     <>
-                                    {/* @ts-ignore */}
-                                    <SearchNameH3 query={query}>{`${s.fileItem ? s.fileItem.name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</SearchNameH3>
-                                    <SearchBody section={s} query={query}/>
+                                        {/* @ts-ignore */}
+                                        <SearchNameH3 query={query}>{`${s.fileItem ? s.fileItem.name : "Unknown file"}${s.name ? (" / " + s.name) : ""}`}</SearchNameH3>
+                                        <SearchBody section={s} query={query} />
                                     </>
                                 )
                             } else {
@@ -118,15 +118,15 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                                     props.setOpenFileId(s._id)
                                     onRequestClose()
                                 }
-                                buttonChildren =  <SearchNameH3 query={query}>{`${s.name}`}</SearchNameH3>
+                                buttonChildren = <SearchNameH3 query={query}>{`${s.name}`}</SearchNameH3>
                             }
-                            
+
                             return (
-                                <Button 
-                                    key={s._id} 
-                                    className={("px-8 text-left") + (idx === selectedIndex ? " bg-gray-100" : "")} 
-                                    id={`searched-doc-${idx}`} 
-                                    onClick={onClick} 
+                                <Button
+                                    key={s._id}
+                                    className={("px-8 text-left") + (idx === selectedIndex ? " bg-gray-100" : "")}
+                                    id={`searched-doc-${idx}`}
+                                    onClick={onClick}
                                     onMouseEnter={() => setSelectedIndex(idx)}
                                 >
                                     <div className="w-full">
@@ -137,7 +137,7 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                         })}
                         {/* Pagination bar */}
                         <div className="px-8 flex gap-4 text-sm text-gray-400 mt-6">
-                            {data.count > 10 && Array.from(Array(Math.ceil(data.count/10)).keys()).map(n => 
+                            {data.count > 10 && Array.from(Array(Math.ceil(data.count / 10)).keys()).map(n =>
                                 <Button onClick={() => {
                                     setPage(n);
                                     setSelectedIndex(0);
@@ -146,13 +146,13 @@ const QuickSwitcher = (props: {isOpen: boolean, onRequestClose: () => (any), set
                             )}
                         </div>
                         <p className="px-8 text-sm text-gray-400 mt-2 text-right">
-                            Showing results {page * 10 + 1}-{(page *10 + 10) < data.count ? (page *10 + 10) : data.count} out of {data.count}
+                            Showing results {page * 10 + 1}-{(page * 10 + 10) < data.count ? (page * 10 + 10) : data.count} out of {data.count}
                         </p>
                     </div>
                 ) : (query.length ? (
                     <p className="text-gray-400 px-8 text-sm mt-2">No documents containing the given query were found.</p>
-                ) : <></> ) : (
-                    <div className="px-8 mt-2"><Skeleton height={32} count={5} className="my-2"/></div>
+                ) : <></>) : (
+                    <div className="px-8 mt-2"><Skeleton height={32} count={5} className="my-2" /></div>
                 )}
             </div>
         </Modal>
@@ -166,24 +166,24 @@ const includesAQueryWord = (string: string, queryWords: string[]) => {
     return false
 }
 
-const SearchNameH3 = ({children, query}: {children: string, query: string}) => {
+const SearchNameH3 = ({ children, query }: { children: string, query: string }) => {
     const queryWords = query.split(" ")
     const nameWords = children.split(" ")
     const newNameWords = nameWords.map(word => (
-        includesAQueryWord(word, queryWords) 
-            ? <span className="font-bold text-gray-700">{word}</span> 
+        includesAQueryWord(word, queryWords)
+            ? <span className="font-bold text-gray-700">{word}</span>
             : <span className="font-semibold text-gray-600">{word}</span>
     ))
     return (
         <h3>{newNameWords.map((element, idx) => (
-            idx === 0 
-                ? <span key={idx}>{element}</span> 
+            idx === 0
+                ? <span key={idx}>{element}</span>
                 : <span key={idx}> {element}</span>
         ))}</h3>
     )
 }
 
-const SearchBody = ({section, query}) => {
+const SearchBody = ({ section, query }) => {
     // s.body.substr(s.body.indexOf(query) - 50, 100)
     const queryWords = query.split(" ")
     const paragraphsArr = section.body.split(`
@@ -202,12 +202,12 @@ const SearchBody = ({section, query}) => {
         //     {p}
         // </pre>)
         <div className="text-gray-400 text-sm">
-            {newParagraphs.map( (p, idx) => <p key={idx} className="mb-2">{
+            {newParagraphs.map((p, idx) => <p key={idx} className="mb-2">{
                 p.map((f, id) => <span key={id}>{f} </span>)
             }</p>)}
         </div>
     )
 }
- 
+
 
 export default QuickSwitcher
