@@ -16,7 +16,7 @@
         "axios": "^0.21.2",
         "date-fns": "^2.22.1",
         "file-saver": "^2.0.5",
-        "jszip": "^3.7.1",
+        "jszip": "^3.8.0",
         "mongoose": "^5.13.14",
         "mousetrap": "^1.6.5",
         "next": "^12.1.0",
