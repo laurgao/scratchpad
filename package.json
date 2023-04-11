@@ -20,7 +20,7 @@
         "mongoose": "^5.13.14",
         "mousetrap": "^1.6.5",
         "next": "^12.1.0",
-        "next-auth": "^3.29.10",
+        "next-auth": "^4.22.0",
         "next-seo": "^4.24.0",
         "nprogress": "^0.2.0",
         "react": "17.0.1",
